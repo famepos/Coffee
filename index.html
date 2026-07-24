@@ -376,6 +376,18 @@ select option:checked {
     margin-top: 0 !important;
     padding-top: 0 !important;
 }
+/* เปลี่ยนเคอร์เซอร์เป็นรูปมือจับเมื่อชี้ที่แถวของตาราง */
+  #productTableBody tr {
+    cursor: grab;
+  }
+  #productTableBody tr:active {
+    cursor: grabbing;
+  }
+  /* ตอนกำลังลากให้สีแถวจางลงนิดนึง */
+  .sortable-ghost {
+    opacity: 0.4;
+    background-color: #f3f4f6;
+  }
   </style>
 </head>
 <body class="w-full flex overflow-hidden text-gray-800 bg-gray-100">  
@@ -2038,6 +2050,42 @@ class="hidden bg-white p-6 rounded-2xl border border-purple-100 shadow-sm flex-1
                         id="settingPromptPay"
                         placeholder="เช่น 0123456789"
                         class="w-full p-4 rounded-xl border-2 border-pink-100 focus:outline-none focus:border-pink-500 transition">
+                </div>
+                <!-- QR Code สำเร็จรูป -->
+                <div class="flex justify-between items-center bg-gray-50 p-5 rounded-xl border border-gray-200 mt-4">
+                    <div class="flex flex-col">
+                        <span class="font-bold text-lg text-gray-800">
+                            🖼️ ใช้รูป QR Code สำเร็จรูป
+                        </span>
+                        <span class="text-sm text-pink-600 mt-1">
+                            อัปโหลดรูป QR เพิ่มเติม
+                        </span>
+                    </div>
+
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox"
+                               id="toggleCustomQR"
+                               onchange="toggleCustomQRInput()"
+                               class="sr-only peer">
+
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-pink-500
+                             after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                             after:bg-white after:border after:border-gray-300 after:rounded-full
+                             after:h-5 after:w-5 after:transition-all
+                             peer-checked:after:translate-x-full"></div>
+                    </label>
+                </div>
+
+                <div id="customQRContainer" class="hidden transition-all bg-white p-5 rounded-xl border border-pink-100 shadow-sm">
+                    <label class="block font-bold text-pink-600 mb-2">อัปโหลดรูปภาพ QR Code ของคุณ</label>
+                    <div class="flex items-center gap-4">
+                        <img id="settingCustomQRPreview" src="" class="w-24 h-24 rounded-xl object-cover border-2 border-dashed border-gray-300 hidden">
+                        <input type="file"
+                               id="customQRInput"
+                               accept="image/*"
+                               onchange="previewCustomQR(event)"
+                               class="block w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100 cursor-pointer">
+                    </div>
                 </div>
 
                 <!-- คนละครึ่ง -->
@@ -4408,6 +4456,28 @@ class="hidden bg-white p-6 rounded-2xl border border-purple-100 shadow-sm flex-1
     </div>
 </div>
 
+<!-- ================= หน้าจอ:📱 สแกน รูป QR Code สำเร็จรูป ================= -->
+<div id="customQRModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl relative flex flex-col items-center text-center">
+        <button onclick="closeCustomQRModal()" class="absolute top-4 right-5 text-gray-400 hover:text-red-500 text-3xl font-bold transition">&times;</button>
+        <h3 class="text-2xl font-bold text-pink-700 mb-2">📱 สแกน QR Code ร้านค้า</h3>
+        <p class="text-sm text-gray-400 mb-6">กรุณาสแกนเพื่อชำระเงินตามยอดด้านล่าง</p>
+        
+        <div class="bg-white p-4 rounded-3xl border-2 border-pink-100 mb-6 shadow-inner w-full flex justify-center items-center">
+            <!-- 🌟 ปรับรูปให้กว้างเต็มกล่อง และสูงสูงสุด 50% ของหน้าจอ (ทำให้ใหญ่เต็มตาแต่ไม่ทะลุจอ) -->
+            <img id="customQRModalImage" src="" class="w-full h-auto max-h-[50vh] object-contain mx-auto transition-opacity duration-300" alt="Store QR Code">
+        </div>
+        
+        <div class="text-base text-gray-500 mb-1">ยอดเงินที่ต้องชำระ</div>
+        <div id="customQRModalAmount" class="text-5xl font-black text-pink-600 mb-8">฿0.00</div>
+        
+        <!-- พอกดปุ่มนี้ มันจะไปเรียก confirmPayment() เพื่อบันทึกบิล -->
+        <button id="btnConfirmCustomQR" onclick="confirmPayment()" class="w-full py-4 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-2xl text-xl shadow-md transition active:scale-95">
+            ชำระเงินเรียบร้อยแล้ว
+        </button>
+    </div>
+</div>
+
 <!-- ================= หน้าจอ: ป๊อปอัปเปิดโต๊ะ (เลือกว่าเป็น Buffet หรือ A la carte) ================= -->
 <div id="openTableModeModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
     <div class="bg-white rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl relative flex flex-col">
@@ -5212,7 +5282,7 @@ window.currentBranch = "<?= currentBranch ?>";
     window.currentStoreId = "<?= currentStoreId ?>";
 
 // 1. ใส่ลิงก์หลังบ้านของคุณเฟรมไว้บนสุด
-const API_URL = "https://script.google.com/macros/s/AKfycbwoYiZEvKuN4u3DYy4T0xqcUscVwRAlCfDTHZRBVoBBsyUvJZvtLPnOXqKpd5n7Shh35g/exec";
+/*const API_URL = "https://script.google.com/macros/s/AKfycbwaXqbOFGMQltGnk-oLbKbyA65NxXGK3T4QeOog9bLTcGpIiGmQsWQOsG8N4yj8BNUpQQ/exec";
 
 // ================================================================
 // 🧙‍♂️ MAGIC PROXY (V2): ทะลวงบล็อก CORS ให้ใช้งานบน GitHub ได้ 100%
@@ -5258,7 +5328,7 @@ const google = {
         }
     }
 };
-
+*/
 let cart = [];
     let currentCash = "0";
     let selectedPayment = "เงินสด";
@@ -5645,6 +5715,11 @@ function updateStoreUI(settings) {
   safeSetCheck('toggleDeliveryPayment', !!settings.enableDeliveryPayment);
   safeSetCheck('toggleOnlinePayment', !!settings.enableOnlinePayment); // 👈 เพิ่มบรรทัดนี้
   togglePromptPayInput();
+  safeSetCheck('toggleCustomQR', !!settings.enableCustomQR);
+  toggleCustomQRInput();
+  if (settings.customQRUrl) {
+      safeSetSrc('settingCustomQRPreview', settings.customQRUrl);
+  }
 
   // 3. อัปเดตภาษีและค่าบริการ
   safeSetCheck('tglTax', !!settings.enableTax);
@@ -5925,8 +6000,15 @@ function savePaymentSettings() {
         enableHalf: document.getElementById('toggleHalf').checked,
         enableSplit: document.getElementById('toggleSplit').checked,
         enableDeliveryPayment: document.getElementById('toggleDeliveryPayment').checked,
-        enableOnlinePayment: document.getElementById('toggleOnlinePayment').checked // 👈 เพิ่มบรรทัดนี้
-      };
+        enableOnlinePayment: document.getElementById('toggleOnlinePayment').checked ,
+    
+    enableCustomQR: document.getElementById('toggleCustomQR').checked,
+        customQRData: customQRBase64,
+        customQRMime: customQRMime,
+        customQRName: customQRName,
+        existingCustomQR: document.getElementById('settingCustomQRPreview').src
+    };
+    
       google.script.run.withSuccessHandler(function(res) {
         showToast("ตั้งค่าการชำระเงินเรียบร้อย!", "success");
         btn.innerText = "บันทึกการชำระเงิน"; btn.disabled = false;
@@ -6046,46 +6128,50 @@ if(document.getElementById('mobileCartBadgeTop')) {
 }
 
 // ==========================================
-// โค้ดชุดแก้ไข Error (วางล่างสุดเหนือ  เท่านั้น)
+// โค้ดชุดแก้ไข Error (วางล่างสุดเหนือเท่านั้น)
 // ==========================================
 function renderPaymentButtons() {
-   var container = document.getElementById('paymentMethodContainer');
-   container.innerHTML = '';
-   var s = globalStoreSettings;
-   var isCashEnabled = s.enableCash !== false;
-   
-   if (currentOrderType === 'เดลิเวอรี่') {
-       if (s.enableDeliveryPayment) {
-           container.innerHTML += '<button onclick="setPaymentType(\'เดลิเวอรี่\')" id="btnเดลิเวอรี่" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition">เดลิเวอรี่</button>';
-           setPaymentType('เดลิเวอรี่'); 
-       } else {
-           container.innerHTML = '<div class="w-full text-center text-red-500 font-bold text-sm py-2">กรุณาเปิดสวิตช์ระบบชำระเงินเดลิเวอรี่ก่อนครับ</div>';
-       }
-   } 
-   // 👇 เพิ่มบล็อกนี้สำหรับ "ออนไลน์" 👇
-   else if (currentOrderType === 'ออนไลน์') {
-       if (s.enableOnlinePayment) {
-           // ปรับให้ปุ่มเป็นโทนสีฟ้า (Blue) ให้เข้ากับออนไลน์
-           container.innerHTML += '<button onclick="setPaymentType(\'ออนไลน์\')" id="btnออนไลน์" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-blue-200 text-blue-500 font-bold bg-white transition">แพลตฟอร์มออนไลน์</button>';
-           setPaymentType('ออนไลน์'); 
-       } else {
-           container.innerHTML = '<div class="w-full text-center text-red-500 font-bold text-sm py-2">กรุณาเปิดสวิตช์ชำระเงินออนไลน์ในหน้าตั้งค่าก่อนครับ</div>';
-       }
-   } 
-   // 👆 สิ้นสุดส่วนที่เพิ่ม 👆
-   else {
-       if (isCashEnabled) container.innerHTML += '<button onclick="setPaymentType(\'เงินสด\')" id="btnเงินสด" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition hover:bg-gray-50">เงินสด</button>';
-       if (s.enableTransfer) container.innerHTML += '<button onclick="setPaymentType(\'โอนเงิน\')" id="btnโอนเงิน" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition hover:bg-gray-50">โอนเงิน</button>';
-       if (s.enableHalf) container.innerHTML += '<button onclick="setPaymentType(\'คนละครึ่ง\')" id="btnคนละครึ่ง" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition hover:bg-gray-50">คนละครึ่ง</button>';
-       
-       if (s.enableSplit) {
-           container.innerHTML += '<button onclick="openSplitPaymentModal()" id="btnแบ่งจ่าย" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition hover:bg-gray-50">แบ่งจ่าย</button>';
-       }
-       
-       if (isCashEnabled) setPaymentType('เงินสด');
-       else if (s.enableTransfer) setPaymentType('โอนเงิน');
-       else if (s.enableHalf) setPaymentType('คนละครึ่ง');
-   }
+    var container = document.getElementById('paymentMethodContainer');
+    container.innerHTML = '';
+    var s = globalStoreSettings;
+    var isCashEnabled = s.enableCash !== false;
+    
+    if (currentOrderType === 'เดลิเวอรี่') {
+        if (s.enableDeliveryPayment) {
+            container.innerHTML += '<button onclick="setPaymentType(\'เดลิเวอรี่\')" id="btnเดลิเวอรี่" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition">เดลิเวอรี่</button>';
+            setPaymentType('เดลิเวอรี่'); 
+        } else {
+            container.innerHTML = '<div class="w-full text-center text-red-500 font-bold text-sm py-2">กรุณาเปิดสวิตช์ระบบชำระเงินเดลิเวอรี่ก่อนครับ</div>';
+        }
+    } 
+    else if (currentOrderType === 'ออนไลน์') {
+        if (s.enableOnlinePayment) {
+            container.innerHTML += '<button onclick="setPaymentType(\'ออนไลน์\')" id="btnออนไลน์" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-blue-200 text-blue-500 font-bold bg-white transition">แพลตฟอร์มออนไลน์</button>';
+            setPaymentType('ออนไลน์'); 
+        } else {
+            container.innerHTML = '<div class="w-full text-center text-red-500 font-bold text-sm py-2">กรุณาเปิดสวิตช์ชำระเงินออนไลน์ในหน้าตั้งค่าก่อนครับ</div>';
+        }
+    } 
+    else {
+        if (isCashEnabled) container.innerHTML += '<button onclick="setPaymentType(\'เงินสด\')" id="btnเงินสด" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition hover:bg-gray-50">เงินสด</button>';
+        
+        // 🟢 คงปุ่ม "โอนเงิน" ไว้แบบเดิมเป๊ะๆ (ต้องกดปุ่มยืนยัน Enter สีชมพูก่อนถึงจะเด้ง)
+        if (s.enableTransfer) container.innerHTML += '<button onclick="setPaymentType(\'โอนเงิน\')" id="btnโอนเงิน" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition hover:bg-gray-50">โอนเงิน</button>';
+        
+        // 🟢 แก้ไขเฉพาะปุ่ม "QR Code": สั่งให้เปิดหน้าต่างรูปภาพขึ้นมาเลยเมื่อกดปุ่ม
+        if (s.enableCustomQR) container.innerHTML += '<button onclick="setPaymentType(\'คิวอาร์โค้ด\'); setTimeout(openCustomQRModal, 100);" id="btnคิวอาร์โค้ด" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition hover:bg-gray-50">QR Code</button>';
+
+        if (s.enableHalf) container.innerHTML += '<button onclick="setPaymentType(\'คนละครึ่ง\')" id="btnคนละครึ่ง" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition hover:bg-gray-50">คนละครึ่ง</button>';
+        
+        if (s.enableSplit) {
+            container.innerHTML += '<button onclick="openSplitPaymentModal()" id="btnแบ่งจ่าย" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition hover:bg-gray-50">แบ่งจ่าย</button>';
+        }
+        
+        if (isCashEnabled) setPaymentType('เงินสด');
+        else if (s.enableTransfer) setPaymentType('โอนเงิน');
+        else if (s.enableCustomQR) setPaymentType('คิวอาร์โค้ด');
+        else if (s.enableHalf) setPaymentType('คนละครึ่ง');
+    }
 }
 
 function setPaymentType(type) {
@@ -6314,14 +6400,30 @@ function updateTimerDisplay() {
 
     function refreshQR() { calculateChange(); startQRTimer(); }
 
+// --- ฟังก์ชันยืนยันชำระเงิน (ถูกแก้ไขให้แยกหน้าต่างกัน) ---
 function confirmPayment() {
     // 🛑 1. ดักจับตะกร้าว่าง
     if (cart.length === 0) return showToast("ตะกร้าสินค้าว่างเปล่า!", "error");
 
+    // 🛑 1.5 ดักจับการเปิดหน้าต่าง (แยกโอนเงิน กับ คิวอาร์โค้ดออกจากกันเด็ดขาด)
+    if (selectedPayment === 'โอนเงิน') {
+        let qModal = document.getElementById('qrModal');
+        if (qModal && qModal.classList.contains('hidden')) {
+            openQRModal(); 
+            return; 
+        }
+    } 
+    else if (selectedPayment === 'คิวอาร์โค้ด') {
+        let cqModal = document.getElementById('customQRModal');
+        if (cqModal && cqModal.classList.contains('hidden')) {
+            openCustomQRModal(); 
+            return; 
+        }
+    }
+
     // --- [2. ล็อคค่า (Snapshot) ข้อมูลสำคัญทั้งหมดไว้ทันที] ---
     const capturedTableNo = document.getElementById('inputTableNo') ? document.getElementById('inputTableNo').value.trim() : '';
     
-    // ล็อครูปแบบบริการ
     let uiOrderType = document.getElementById('currentOrderTypeDisplay') ? document.getElementById('currentOrderTypeDisplay').innerText.trim() : '';
     let capturedOrderType = (uiOrderType !== "" && uiOrderType !== "-") ? uiOrderType : (typeof currentOrderType !== 'undefined' ? currentOrderType : 'ทานที่ร้าน');
     if (!capturedOrderType || capturedOrderType === "-") capturedOrderType = 'ทานที่ร้าน';
@@ -6329,12 +6431,9 @@ function confirmPayment() {
     const capturedDeliveryApp = document.getElementById('selectDeliveryApp') ? document.getElementById('selectDeliveryApp').value : '';
     const capturedDeliveryOrderId = document.getElementById('inputDeliveryOrderId') ? document.getElementById('inputDeliveryOrderId').value.trim() : '';
 
-// 👇 โค้ดดึงข้อมูลแพลตฟอร์มออนไลน์ (แก้ไข ID ให้ตรงกับ HTML แล้ว) 👇
-   const capturedOnlinePlatform = document.getElementById('onlineAppSelectedText') ? document.getElementById('onlineAppSelectedText').innerText.trim() : 'ไม่ระบุแพลตฟอร์ม';
-   const capturedOnlineOrderId = document.getElementById('inputOnlineOrderId') ? document.getElementById('inputOnlineOrderId').value.trim() : '';
-   // 👆 สิ้นสุดส่วนที่เพิ่ม 👆
+    const capturedOnlinePlatform = document.getElementById('onlineAppSelectedText') ? document.getElementById('onlineAppSelectedText').innerText.trim() : 'ไม่ระบุแพลตฟอร์ม';
+    const capturedOnlineOrderId = document.getElementById('inputOnlineOrderId') ? document.getElementById('inputOnlineOrderId').value.trim() : '';
 
-    // 🟢 ล็อคชื่อพนักงานและสาขา ป้องกันค่าหายระหว่างรอเซิร์ฟเวอร์!
     let capturedUserLog = (typeof window !== 'undefined' && window.currentUser) ? window.currentUser : (typeof currentUser !== 'undefined' ? currentUser : "ไม่ระบุพนักงาน");
     let capturedBranchLog = (typeof window !== 'undefined' && window.currentBranch) ? window.currentBranch : (typeof currentBranch !== 'undefined' ? currentBranch : "สาขาหลัก");
     if (capturedBranchLog === "ทุกสาขา") capturedBranchLog = "สาขาหลัก";
@@ -6351,7 +6450,7 @@ function confirmPayment() {
     
     if(selectedPayment === 'เงินสด' && !isSplitIntended && cash < grandTotal) return showToast("จำนวนเงินสดไม่เพียงพอ!", "error");
     
-let exactCash = 0; let exactTransfer = 0;
+    let exactCash = 0; let exactTransfer = 0;
     let finalPaymentType = selectedPayment;
     
     if (selectedPayment === 'เงินสด') { exactCash = cash; } 
@@ -6359,23 +6458,26 @@ let exactCash = 0; let exactTransfer = 0;
     else if (selectedPayment === 'โอนเงิน') {
         if (isSplitIntended) { exactCash = cash; exactTransfer = grandTotal - cash; finalPaymentType = 'แบ่งจ่าย'; } 
         else { exactTransfer = grandTotal; }
-    } else if (selectedPayment === 'เดลิเวอรี่') { exactTransfer = grandTotal; }
+    } 
+    else if (selectedPayment === 'คิวอาร์โค้ด') { 
+        exactTransfer = grandTotal; 
+        finalPaymentType = 'โอนเงิน'; // บันทึกเป็นโอนเงินในหลังบ้าน
+    }
+    else if (selectedPayment === 'เดลิเวอรี่') { exactTransfer = grandTotal; }
     else if (selectedPayment === 'แบ่งจ่าย') {
-        // 🌟 ดักจับระบบแบ่งจ่ายที่เราทำใหม่ เพื่อกระจายยอดส่งเข้า Google Sheets
         if (window.isSplitEqualDetailed) {
-            // โหมดหารบิลเท่ากัน: เงินสดสุทธิ (รายได้) = เงินที่รับมา - เงินทอน
             exactCash = window.splitEqualDetails.cash - window.splitEqualDetails.change;
             exactTransfer = window.splitEqualDetails.transfer;
         } else {
-            // โหมดผสม (Mix: เงินสด + โอน)
             exactCash = cash;
             exactTransfer = grandTotal - cash;
         }
     }
-      
+    
     // ล็อคปุ่ม
     let btn = document.getElementById('btnConfirm'); if(btn) { btn.innerText = "⏳ กำลังบันทึก..."; btn.disabled = true; }
     let btnQR = document.getElementById('btnConfirmQR'); if(btnQR) { btnQR.innerText = "⏳ กำลังบันทึก..."; btnQR.disabled = true; }
+    let btnCQR = document.getElementById('btnConfirmCustomQR'); if(btnCQR) { btnCQR.innerText = "⏳ กำลังบันทึก..."; btnCQR.disabled = true; }
     
     if (typeof qrTimerInterval !== 'undefined') clearInterval(qrTimerInterval);
     let cartData = cart.map(function(i) { return {name: i.name, qty: i.qty, total: i.price * i.qty}; });
@@ -6384,22 +6486,21 @@ let exactCash = 0; let exactTransfer = 0;
     if (window.pointConfig && window.pointConfig.redeemPoint > 0) {
         pointDiscount = (usedPoints / window.pointConfig.redeemPoint) * window.pointConfig.redeemBaht;
     }
-    
     let totalDiscountForDB = discount + pointDiscount + autoPromoDiscountTotal;
     
     // --- [4. ส่งข้อมูลไปเซิร์ฟเวอร์] ---
     google.script.run
     .withFailureHandler(function(error) {
-        console.error("Server Error:", error);
         showToast("เซิร์ฟเวอร์ขัดข้อง: " + error.message, "error");
         if(btn) { btn.innerText = "ยืนยันชำระเงิน (Enter)"; btn.disabled = false; }
         if(btnQR) { btnQR.innerText = "ชำระเงินแล้ว"; btnQR.disabled = false; }
+        if(btnCQR) { btnCQR.innerText = "ชำระเงินเรียบร้อยแล้ว"; btnCQR.disabled = false; }
     })
     .withSuccessHandler(function(res) {
         try {
             if (!res || !res.orderId) throw new Error("ข้อมูลตอบกลับไม่สมบูรณ์");
 
-            // แสดงวันที่และคิว
+            // อัปเดตใบเสร็จ
             let elDate = document.getElementById('receiptDate'); if(elDate) elDate.innerText = res.timestamp;
             let elOrderId = document.getElementById('slipOrderId'); if(elOrderId) elOrderId.innerText = res.orderId;
             let queueNumber = "Q" + res.orderId.slice(-3);
@@ -6408,7 +6509,6 @@ let exactCash = 0; let exactTransfer = 0;
             let elSlipDate = document.getElementById('slipDate'); if(elSlipDate) elSlipDate.innerText = res.timestamp;
             let elPhone = document.getElementById('slipPhone'); if(elPhone) elPhone.innerText = phone;
             
-            // 🟢 แสดงชื่อพนักงานและสาขา (จากค่าที่ล็อคไว้)
             let elUser = document.getElementById('slipUser'); if(elUser) elUser.innerText = capturedUserLog;
             let elBranchDisp = document.getElementById('receiptBranchDisplay'); if(elBranchDisp) elBranchDisp.innerText = capturedBranchLog;
 
@@ -6416,27 +6516,16 @@ let exactCash = 0; let exactTransfer = 0;
             let branchAddress = (branchInfo && branchInfo.desc && branchInfo.desc.trim() !== "") ? branchInfo.desc : (globalStoreSettings.address || "");
             let elAddress = document.getElementById('receiptAddress'); if(elAddress) elAddress.innerText = branchAddress;
 
-      // 🟢 แสดงชื่อโต๊ะ (จากค่าที่ล็อคไว้)
             let finalTypeString = "";
-            if (capturedOrderType === 'ทานที่ร้าน' || capturedTableNo !== "") { 
-                finalTypeString = capturedTableNo !== "" ? "โต๊ะ: " + capturedTableNo : "ทานที่ร้าน";
-            } else if (capturedOrderType === 'กลับบ้าน') {
-                finalTypeString = "กลับบ้าน";
-            } else if (capturedOrderType === 'เดลิเวอรี่') {
-                finalTypeString = capturedDeliveryApp + (capturedDeliveryOrderId !== "" ? " " + capturedDeliveryOrderId : "");
-            } 
-            // 👇 เพิ่มเงื่อนไขนี้เข้าไปสำหรับ "ออนไลน์" 👇
-            else if (capturedOrderType === 'ออนไลน์') {
-                finalTypeString = `ออนไลน์ - ${capturedOnlinePlatform}` + (capturedOnlineOrderId !== "" ? ` (ออเดอร์: ${capturedOnlineOrderId})` : "");
-            }
-            // 👆 สิ้นสุดส่วนที่เพิ่ม 👆
-            else {
-                finalTypeString = capturedTableNo !== "" ? "โต๊ะ: " + capturedTableNo : "ทานที่ร้าน";
-            }
+            if (capturedOrderType === 'ทานที่ร้าน' || capturedTableNo !== "") { finalTypeString = capturedTableNo !== "" ? "โต๊ะ: " + capturedTableNo : "ทานที่ร้าน"; }
+            else if (capturedOrderType === 'กลับบ้าน') { finalTypeString = "กลับบ้าน"; } 
+            else if (capturedOrderType === 'เดลิเวอรี่') { finalTypeString = capturedDeliveryApp + (capturedDeliveryOrderId !== "" ? " " + capturedDeliveryOrderId : ""); } 
+            else if (capturedOrderType === 'ออนไลน์') { finalTypeString = `ออนไลน์ - ${capturedOnlinePlatform}` + (capturedOnlineOrderId !== "" ? ` (ออเดอร์: ${capturedOnlineOrderId})` : ""); }
+            else { finalTypeString = capturedTableNo !== "" ? "โต๊ะ: " + capturedTableNo : "ทานที่ร้าน"; }
+            
             let elSlipType = document.getElementById('slipOrderTypeDisplay'); if(elSlipType) elSlipType.innerText = finalTypeString;
             let elKitType = document.getElementById('kitchenOrderTypeDisplay'); if(elKitType) elKitType.innerText = finalTypeString;
 
-            // สรุปรายการสินค้า
             let itemsHtml = ""; let kitchenItemsHtml = "";
             if (res.cart && Array.isArray(res.cart)) {
                 res.cart.forEach(function(item) { 
@@ -6464,20 +6553,12 @@ let exactCash = 0; let exactTransfer = 0;
             let elPayType = document.getElementById('slipPayType'); if(elPayType) elPayType.innerText = res.paymentType;
             let elChange = document.getElementById('slipChange'); if(elChange) elChange.innerText = res.changeAmount;
 
-            // 🌟 แทรกโค้ดโชว์รายละเอียดหารบิลตรงนี้
             let elSplit = document.getElementById('slipSplitDetails');
             if (window.isSplitEqualDetailed && globalSplitDetailsHTML !== "") {
-                if(elSplit) {
-                    elSplit.innerHTML = globalSplitDetailsHTML;
-                    elSplit.classList.remove('hidden');
-                }
-            } else {
-                if(elSplit) elSplit.classList.add('hidden');
-            }
-            window.isSplitEqualDetailed = false; // เคลียร์สถานะหลังจากพิมพ์เสร็จ
-            globalSplitDetailsHTML = "";
+                if(elSplit) { elSplit.innerHTML = globalSplitDetailsHTML; elSplit.classList.remove('hidden'); }
+            } else { if(elSplit) elSplit.classList.add('hidden'); }
+            window.isSplitEqualDetailed = false; globalSplitDetailsHTML = "";
 
-            
             let elCash = document.getElementById('slipCash');
             if(elCash) {
                 let displayCashVal = (finalPaymentType === 'เงินสด') ? parseFloat(res.cashReceived) : exactCash;
@@ -6504,22 +6585,29 @@ let exactCash = 0; let exactTransfer = 0;
             if (pointsWrapper) { if (phone && phone !== "-" && phone.trim() !== "") pointsWrapper.classList.remove('hidden'); else pointsWrapper.classList.add('hidden'); }
             let slipTaxRow = document.getElementById('slipTaxRow'); if (slipTaxRow) { if (globalStoreSettings.enableTax) slipTaxRow.classList.remove('hidden'); else slipTaxRow.classList.add('hidden'); }
             let slipServiceRow = document.getElementById('slipServiceRow'); if (slipServiceRow) { if (globalStoreSettings.enableService) slipServiceRow.classList.remove('hidden'); else slipServiceRow.classList.add('hidden'); }
-            let rQR = document.getElementById('receiptQRPromptPay');
+          let rQR = document.getElementById('receiptQRPromptPay');
             if(rQR) {
-                if(globalStoreSettings.showReceiptQR && globalStoreSettings.promptPay && res.paymentType === 'โอนเงิน') {
-                  rQR.src = 'https://promptpay.io/' + globalStoreSettings.promptPay + '/' + res.grandTotal + '.png'; rQR.classList.remove('hidden');
-                } else { rQR.classList.add('hidden'); }
+                if (globalStoreSettings.showReceiptQR) {
+                    if (selectedPayment === 'คิวอาร์โค้ด' && globalStoreSettings.customQRUrl) {
+                        // แบบใหม่: แสดงรูป QR Code ที่อัปโหลดเอง
+                        rQR.src = globalStoreSettings.customQRUrl;
+                        rQR.classList.remove('hidden');
+                    } else if (selectedPayment === 'โอนเงิน' && globalStoreSettings.promptPay) {
+                        // แบบเดิม: แสดง QR Code พร้อมเพย์ตามยอดเงิน
+                        rQR.src = 'https://promptpay.io/' + globalStoreSettings.promptPay + '/' + res.grandTotal + '.png';
+                        rQR.classList.remove('hidden');
+                    } else {
+                        rQR.classList.add('hidden');
+                    }
+                } else {
+                    rQR.classList.add('hidden');
+                }
             }
 
-            // --- เปิดใบเสร็จและเคลียร์หน้าจอ ---
-
-            // 🌟 แทรกโค้ดตรงนี้: หักโควต้าและบันทึกประวัติการใช้โปรโมชั่น
             if (typeof activePromotionsIds !== 'undefined' && activePromotionsIds.length > 0 && phone !== "-") {
                 let cleanPhoneStr = phone.replace(/[^0-9]/g, '');
                 if (cleanPhoneStr !== "") {
                     google.script.run.recordPromoUsageGS(cleanPhoneStr, activePromotionsIds, res.orderId);
-                    
-                    // อัปเดตในเครื่องทันที ป้องกันลูกค้าวนเข้าคิวซื้อซ้ำทันที
                     activePromotionsIds.forEach(pid => {
                         if(!globalPromoUsage[cleanPhoneStr]) globalPromoUsage[cleanPhoneStr] = {};
                         if(!globalPromoUsage[cleanPhoneStr][pid]) globalPromoUsage[cleanPhoneStr][pid] = 0;
@@ -6528,13 +6616,15 @@ let exactCash = 0; let exactTransfer = 0;
                 }
             }
 
-            playSound('cashier.mp3');
+            if(typeof playSound === 'function') playSound('cashier.mp3');
 
             let rModal = document.getElementById('receiptModal'); if(rModal) rModal.classList.remove('hidden');
             let pModal = document.getElementById('paymentModal'); if(pModal) pModal.classList.add('hidden');
             let qModal = document.getElementById('qrModal'); if(qModal) qModal.classList.add('hidden'); 
             
-            // 🛑 ปรับปรุง: อัปเดตสถานะโต๊ะ (ไม่เปลี่ยนเป็นว่าง ถ้าเป็น Prepaid)
+            // 🟢 ปิดหน้าต่าง Custom QR เมื่อบันทึกเสร็จ
+            let cqModal = document.getElementById('customQRModal'); if(cqModal) cqModal.classList.add('hidden'); 
+            
             if (!window.isPrepaidOrder && (capturedOrderType === 'ทานที่ร้าน' || capturedTableNo !== "") && capturedTableNo !== "") {
                 google.script.run.withSuccessHandler(function(updatedTables) {
                     if (updatedTables) {
@@ -6546,75 +6636,36 @@ let exactCash = 0; let exactTransfer = 0;
                 }).updateTableStatusGS(capturedTableNo, "ว่าง");
             }
             
-           cart = []; updateCartUI();
-            isAlreadySentToKitchen = false; // ล้างค่าหลังเช็คบิลเสร็จ
+            cart = []; updateCartUI();
+            isAlreadySentToKitchen = false; 
             
             let inTable = document.getElementById('inputTableNo'); if (inTable) inTable.value = "";
             let dispTable = document.getElementById('displaySelectedTable'); if (dispTable) dispTable.innerText = "-";
             let typeDisp = document.getElementById('currentOrderTypeDisplay'); if (typeDisp) typeDisp.innerText = "-";
-            
-            // 👇 [เพิ่มโค้ดส่วนนี้] เพื่อล้างค่าช่องเลขออเดอร์ออนไลน์ และเดลิเวอรี่ 👇
             let inOnlineOrder = document.getElementById('inputOnlineOrderId'); if (inOnlineOrder) inOnlineOrder.value = "";
             let inDeliveryOrder = document.getElementById('inputDeliveryOrderId'); if (inDeliveryOrder) inDeliveryOrder.value = "";
 
             if (typeof toggleTableDisplay === 'function') toggleTableDisplay(false);
-            
             showToast("บันทึกรายการขายสำเร็จ!", "success", true);
 
-          
- // ----------------------------------------------------
-// 👨‍🍳 ระบบยิงออเดอร์เข้าครัวสำหรับ โต๊ะแบบ Prepaid (จ่ายก่อนกิน)
-// ----------------------------------------------------
-// ส่งเข้าครัวเฉพาะออเดอร์ที่สร้างจาก POS เท่านั้น
-if (
-    window.isPrepaidOrder &&
-    capturedTableNo !== "" &&
-    globalStoreSettings.enableKitchenDisplay === true
-) {
-
-    let kitOrder = {
-        orderId: res.orderId,
-        tableNo: capturedTableNo,
-        orderType: capturedOrderType,
-        items: res.cart
-    };
-
-    google.script.run
-        .withSuccessHandler(function(exists){
-
-            if (!exists) {
-
-                google.script.run
-                    .withSuccessHandler(function(){
-                        console.log("ส่ง KDS สำเร็จ");
-                    })
-                    .createKitchenOrderGS(kitOrder);
-
-            } else {
-
-                console.log("Order อยู่ใน KitchenOrders แล้ว ไม่ส่งซ้ำ");
-
+            if (window.isPrepaidOrder && capturedTableNo !== "" && globalStoreSettings.enableKitchenDisplay === true) {
+                let kitOrder = { orderId: res.orderId, tableNo: capturedTableNo, orderType: capturedOrderType, items: res.cart };
+                google.script.run.withSuccessHandler(function(exists){
+                    if (!exists) { google.script.run.createKitchenOrderGS(kitOrder); }
+                }).isKitchenOrderExists(res.orderId);
             }
-
-        })
-        .isKitchenOrderExists(res.orderId);
-
-}
-
-window.isPrepaidOrder = false;
-// ----------------------------------------------------
-            // ----------------------------------------------------
+            window.isPrepaidOrder = false;
 
         } catch (error) {
-            console.error("UI Update Error:", error);
             showToast("เกิดข้อผิดพลาดในการแสดงบิล: " + error.message, "error");
         } finally {
             if(btn) { btn.innerText = "ยืนยันชำระเงิน (Enter)"; btn.disabled = false; }
             if(btnQR) { btnQR.innerText = "ชำระเงินแล้ว"; btnQR.disabled = false; }
+            if(btnCQR) { btnCQR.innerText = "ชำระเงินเรียบร้อยแล้ว"; btnCQR.disabled = false; }
         }
-        
     }).processSale(cartData, finalPaymentType, currentCash, changeStr, totalDiscountForDB, phone, exactCash, exactTransfer, tax, service, usedPoints, capturedUserLog, capturedBranchLog, capturedOrderType, capturedTableNo, capturedDeliveryApp, capturedDeliveryOrderId, isAlreadySentToKitchen);
 }
+
 function finishRealTime() {
   const tableNo = document.getElementById('inputTableNo')?.value || '';
   if (tableNo) {
@@ -6848,36 +6899,51 @@ document.addEventListener('click', function(event) {
   }
 });
 
-// ฟังก์ชันเปิด Modal
-function openQRModal() {
-    // 1. ดึงค่า Grand Total จากหน้าต่างชำระเงิน
+// --- ฟังก์ชันเปิด/ปิด หน้าต่าง QR Code รูปภาพที่อัปโหลดเอง ---
+function openCustomQRModal() {
     let grandTotalText = document.getElementById('modalGrandTotal').innerText.replace('฿', '').replace(',', '');
     let grandTotal = parseFloat(grandTotalText) || 0;
 
-    // 2. ดึงเลขพร้อมเพย์จากค่าตั้งค่าที่โหลดมา (globalStoreSettings)
-    let promptPayID = globalStoreSettings.promptPay;
-
-    // 3. ตรวจสอบเงื่อนไขก่อนแสดง
-    if (!promptPayID || promptPayID.trim() === "") {
-        showAlert("ข้อผิดพลาด", "ยังไม่ได้ตั้งค่าเลขพร้อมเพย์ในหน้าตั้งค่า", "❌", "error");
+    if (grandTotal <= 0) {
+        if(typeof showToast === 'function') showToast("ยอดเงินต้องมากกว่า 0 บาท", "error");
         return;
     }
+
+    let customQR = globalStoreSettings.customQRUrl;
+    if (!customQR) {
+        if(typeof showToast === 'function') showToast("ยังไม่ได้อัปโหลดรูป QR Code ในหน้าตั้งค่า", "error");
+        return;
+    }
+    
+    document.getElementById('customQRModalImage').src = customQR;
+    document.getElementById('customQRModalAmount').innerText = "฿" + grandTotal.toFixed(2);
+    document.getElementById('customQRModal').classList.remove('hidden');
+}
+
+function closeCustomQRModal() {
+    document.getElementById('customQRModal').classList.add('hidden');
+}
+
+// --- ฟังก์ชันเปิดหน้าต่าง PromptPay (แบบเดิม) ---
+function openQRModal() {
+    let grandTotalText = document.getElementById('modalGrandTotal').innerText.replace('฿', '').replace(',', '');
+    let grandTotal = parseFloat(grandTotalText) || 0;
 
     if (grandTotal <= 0) {
-        showAlert("ข้อผิดพลาด", "ยอดเงินต้องมากกว่า 0 บาท", "❌", "error");
+        if(typeof showToast === 'function') showToast("ยอดเงินต้องมากกว่า 0 บาท", "error");
         return;
     }
 
-    // 4. อัปเดตยอดเงินใน Modal
+    let promptPayID = globalStoreSettings.promptPay;
+    if (!promptPayID || promptPayID.trim() === "") {
+        if(typeof showToast === 'function') showToast("ยังไม่ได้ตั้งค่าเลขพร้อมเพย์ในหน้าตั้งค่า", "error");
+        return;
+    }
+
+    document.getElementById('qrModalImage').src = 'https://promptpay.io/' + promptPayID.replace(/-/g, '') + '/' + grandTotal.toFixed(2) + '.png';
     document.getElementById('qrModalAmount').innerText = "฿" + grandTotal.toFixed(2);
-
-    // 5. อัปเดต URL รูปภาพ QR
-    let qrUrl = 'https://promptpay.io/' + promptPayID.replace(/-/g, '') + '/' + grandTotal.toFixed(2) + '.png';
-    document.getElementById('qrModalImage').src = qrUrl;
-
-    // 6. แสดง Modal
     document.getElementById('qrModal').classList.remove('hidden');
-    startQRTimer(); // เริ่มนับเวลาถอยหลัง
+    if(typeof startQRTimer === 'function') startQRTimer();
 }
 // ฟังก์ชันปิด Modal
 function closeQRModal() {
@@ -7369,6 +7435,12 @@ function loadAllHistory() {
 // ============================================
 // ระบบจัดการสินค้า (Product Management)
 // ============================================
+// ============================================
+// ระบบจัดการสินค้า (Product Management)
+// ============================================
+
+let productSortableInstance = null; // 📌 เพิ่มตัวแปรนี้ไว้ข้างนอก เพื่อไม่ให้ระบบลากซ้อนกันตอนรีเฟรช
+
 // โหลดข้อมูลสินค้ามาลงตาราง (+ ดึงหมวดหมู่มาใส่ Dropdown)
 function loadAdminProducts() {
     google.script.run.withSuccessHandler(function(products) {
@@ -7397,8 +7469,9 @@ function loadAdminProducts() {
                                             ? `฿${parseFloat(p.onlinePrice).toFixed(2)}` 
                                             : '-';
 
+                // 🚨 สำคัญ: เพิ่ม data-rowidx="${p.rowIdx}" และ class สำหรับเปลี่ยนเมาส์เป็นรูปมือ (cursor-grab)
                 html += `
-                <tr class="hover:bg-gray-50 border-b border-gray-100">
+                <tr data-rowidx="${p.rowIdx}" class="hover:bg-gray-50 border-b border-gray-100 cursor-grab active:cursor-grabbing">
                     <td class="p-3 text-center">${imgTag}</td>
                     <td class="p-3 text-sm">${p.barcode || '-'}</td>
                     <td class="p-3 font-bold">${p.name}</td>
@@ -7416,8 +7489,58 @@ function loadAdminProducts() {
                 </tr>`;
             });
         }
+        
         let tbody = document.getElementById('productTableBody');
-        if (tbody) tbody.innerHTML = html;
+        
+        if (tbody) {
+            // ดัน HTML ลงตาราง
+            tbody.innerHTML = html;
+
+            // ==========================================
+            // 🎯 เปิดใช้งานระบบ SortableJS ตรงนี้
+            // ==========================================
+            if (productSortableInstance) {
+                productSortableInstance.destroy(); // ล้างของเก่าทิ้งก่อน (กันบั๊ก)
+            }
+
+            productSortableInstance = new Sortable(tbody, {
+                animation: 150, // ความสมูทตอนลาก
+                ghostClass: 'opacity-40', // ทำให้แถวที่กำลังลากสีจางลงนิดนึง
+                onEnd: function (evt) {
+                    // เมื่อผู้ใช้ปล่อยเมาส์ 
+                    let rows = tbody.querySelectorAll('tr');
+                    let sortData = [];
+                    
+                    rows.forEach((row, index) => {
+                        let rowIdx = row.getAttribute('data-rowidx');
+                        if (rowIdx) {
+                            sortData.push({
+                                rowIdx: parseInt(rowIdx),
+                                sortOrder: index + 1 // เริ่มตั้งแต่ลำดับที่ 1
+                            });
+                        }
+                    });
+showToast("กำลังอัปเดตลำดับ...", "info");
+                    
+google.script.run
+    .withSuccessHandler(function(res) {
+        if(res === "Success") {
+            showToast("อัปเดตลำดับสินค้าเรียบร้อยแล้ว!", "success");
+            
+            // 📌 สั่งให้ไปดึงข้อมูลหน้าขายมาใหม่แบบเงียบๆ
+            if (typeof loadProducts === 'function') {
+                loadProducts(); // 👈 เปลี่ยนเป็นชื่อนี้ให้ตรงกับระบบของคุณ
+            }
+            
+        } else {
+            showToast("เกิดข้อผิดพลาด: " + res, "error");
+        }
+    })
+    .updateProductSortOrderGS(sortData);
+                }
+            });
+            // ==========================================
+        }
     }).getAdminProducts();
 }
 
@@ -7709,7 +7832,7 @@ function deleteProduct(rowIdx, name) {
     }); 
 }
 
-// ฟังก์ชันโหลดข้อมูลสินค้ามาทับตารางแบบ "เงียบๆ" (ไม่มีจังหวะกระพริบโหลดดิ้ง)
+// ฟังก์ชันโหลดข้อมูลสินค้ามาทับตารางแบบ "เงียบๆ" (ไม่มีจังหวะกระพริบโหลดดิ้ง) + รองรับลากวาง
 function refreshAdminProductsQuietly() {
     google.script.run.withSuccessHandler(function(products) { 
         currentAdminProducts = products; 
@@ -7719,33 +7842,82 @@ function refreshAdminProductsQuietly() {
         
         let html = '';
         if(products.length === 0) { 
-            html = '<tr><td colspan="9" class="p-8 text-center text-gray-400 font-bold">ยังไม่มีข้อมูลสินค้า 📭</td></tr>';
+            html = '<tr><td colspan="10" class="p-8 text-center text-gray-400 font-bold">ยังไม่มีข้อมูลสินค้า 📭</td></tr>';
         } else { 
             products.forEach((p, index) => { 
                 let safeName = p.name.replace(/'/g, "\\'").replace(/"/g, '&quot;'); 
                 let displayRemaining = p.remaining === "" ? '♾️ ไม่จำกัด' : p.remaining; 
                 let imgTag = p.image ? `<img src="${p.image}" class="w-12 h-12 object-cover rounded-xl border">` : `📦`; 
-                let displayDeliveryPrice = (p.deliveryPrice !== "" && p.deliveryPrice !== undefined && p.deliveryPrice !== null) ? `฿${parseFloat(p.deliveryPrice).toFixed(2)}` : '-'; 
                 
-                html += ` <tr class="hover:bg-gray-50 border-b border-gray-100"> 
+                let displayDeliveryPrice = (p.deliveryPrice !== "" && p.deliveryPrice !== undefined && p.deliveryPrice !== null) ? `฿${parseFloat(p.deliveryPrice).toFixed(2)}` : '-'; 
+                let displayOnlinePrice = (p.onlinePrice !== "" && p.onlinePrice !== undefined && p.onlinePrice !== null) ? `฿${parseFloat(p.onlinePrice).toFixed(2)}` : '-'; 
+                
+                html += `
+                <tr data-rowidx="${p.rowIdx}" class="hover:bg-gray-50 border-b border-gray-100 cursor-grab active:cursor-grabbing"> 
                     <td class="p-3 text-center">${imgTag}</td> 
                     <td class="p-3 text-sm">${p.barcode || '-'}</td> 
                     <td class="p-3 font-bold">${p.name}</td> 
                     <td class="p-3">${p.category || '-'}</td> 
                     <td class="p-3">฿${parseFloat(p.cost).toFixed(2)}</td> 
-                    <td class="p-3 font-bold text-emerald-600">฿${parseFloat(p.price).toFixed(2)}</td> 
+                    <td class="p-3 font-bold text-pink-600">฿${parseFloat(p.price).toFixed(2)}</td> 
                     <td class="p-3 font-bold text-orange-500">${displayDeliveryPrice}</td> 
-                    <td class="p-3 font-bold text-green-600">${displayRemaining}</td> 
+                    <td class="p-3 font-bold text-emerald-500">${displayOnlinePrice}</td> 
+                    <td class="p-3 font-bold text-pink-600">${displayRemaining}</td> 
                     <td class="p-3 text-center whitespace-nowrap"> 
-                        <button onclick="openRecipeManager('${safeName}', ${p.price})" class="px-3 py-2 bg-pink-100 text-orange-600 rounded-xl font-bold mr-1 hover:bg-orange-200 transition">🍳 ผูกสูตร</button> 
+                        <button onclick="openRecipeManager('${safeName}', ${p.price})" class="px-3 py-2 bg-emerald-100 text-emerald-600 rounded-xl font-bold mr-1 hover:bg-emerald-200 transition">🍳 ผูกสูตร</button> 
                         <button onclick="openProductModal(${index})" class="px-3 py-2 bg-pink-50 text-pink-500 rounded-xl font-bold mr-1">แก้ไข</button> 
                         <button onclick="deleteProduct(${p.rowIdx}, '${safeName}')" class="px-3 py-2 bg-red-50 text-red-500 rounded-xl font-bold">ลบ</button> 
                     </td> 
-                </tr>`;
+                </tr>`; 
             }); 
         } 
+        
         let tbody = document.getElementById('productTableBody');
-        if(tbody) tbody.innerHTML = html; 
+        if(tbody) {
+            tbody.innerHTML = html; 
+
+            // 🎯 เปิดใช้งาน SortableJS ซ้ำอีกรอบเพื่อรักษาสถานะการลากหลังรีเฟรชตารางแบบเงียบๆ
+            if (productSortableInstance) {
+                productSortableInstance.destroy();
+            }
+
+            productSortableInstance = new Sortable(tbody, {
+                animation: 150,
+                ghostClass: 'opacity-40',
+                onEnd: function (evt) {
+                    let rows = tbody.querySelectorAll('tr');
+                    let sortData = [];
+                    
+                    rows.forEach((row, index) => {
+                        let rowIdx = row.getAttribute('data-rowidx');
+                        if (rowIdx) {
+                            sortData.push({
+                                rowIdx: parseInt(rowIdx),
+                                sortOrder: index + 1
+                            });
+                        }
+                    });
+
+showToast("กำลังอัปเดตลำดับ...", "info");
+                    
+google.script.run
+    .withSuccessHandler(function(res) {
+        if(res === "Success") {
+            showToast("อัปเดตลำดับสินค้าเรียบร้อยแล้ว!", "success");
+            
+            // 📌 สั่งให้ไปดึงข้อมูลหน้าขายมาใหม่แบบเงียบๆ
+            if (typeof loadProducts === 'function') {
+                loadProducts(); // 👈 เปลี่ยนเป็นชื่อนี้ให้ตรงกับระบบของคุณ
+            }
+            
+        } else {
+            showToast("เกิดข้อผิดพลาด: " + res, "error");
+        }
+    })
+    .updateProductSortOrderGS(sortData);
+                }
+            });
+        }
     }).getAdminProducts(); 
 }
 
@@ -12265,7 +12437,6 @@ function syncDeliveryDropdownUI() {
 syncDeliveryDropdownUI();
 
 // ฟังก์ชันส่งข้อมูลไปยังหน้าจอลูกค้า (Customer Facing Display)
-// ฟังก์ชันส่งข้อมูลไปยังหน้าจอลูกค้า (Customer Facing Display)
 function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
     try {
         let subTot = document.getElementById('totalPrice') ? document.getElementById('totalPrice').innerText : "0";
@@ -12308,9 +12479,15 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
         if (overrideStatus) currentStatus = overrideStatus; 
 
         let tLabel = "ภาษี"; let sLabel = "ค่าบริการ";
+        let useCustomQR = false;
+        let customQRUrlStr = "";
+        
         if (typeof globalStoreSettings !== 'undefined') {
             tLabel = globalStoreSettings.enableTax ? `ภาษีมูลค่าเพิ่ม ${globalStoreSettings.taxAmount}${globalStoreSettings.taxType === 'percent' ? '%' : ' บาท'}` : "ภาษีมูลค่าเพิ่ม";
             sLabel = globalStoreSettings.enableService ? `ค่าบริการ ${globalStoreSettings.serviceValue}${globalStoreSettings.serviceType === 'percent' ? '%' : ' บาท'}` : "ค่าบริการ";
+            
+            useCustomQR = globalStoreSettings.enableCustomQR;
+            customQRUrlStr = globalStoreSettings.customQRUrl || "";
         }
 
         let enrichedCart = cart.map(item => {
@@ -12334,6 +12511,10 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
             tableNo: cart.length === 0 ? "" : (document.getElementById('inputTableNo')?.value || "-"),
             orderType: cart.length === 0 ? "ทานที่ร้าน" : (typeof currentOrderType !== 'undefined' ? currentOrderType : "โต๊ะ"),
             promptPay: pp,
+            // 🟢 [แก้ไขเพิ่ม Custom QR] ส่งไปให้จอลูกค้า (CDS) รู้ว่าต้องใช้รูปอะไร
+            useCustomQR: useCustomQR,
+            customQRUrl: customQRUrlStr,
+            
             deliveryAppText: document.getElementById('deliveryAppSelectedText') ? document.getElementById('deliveryAppSelectedText').innerText : "",
             deliveryOrderId: document.getElementById('inputDeliveryOrderId') ? document.getElementById('inputDeliveryOrderId').value : "",
             cashReceived: parseFloat(typeof currentCash !== 'undefined' ? currentCash : 0) || 0,
@@ -12353,7 +12534,8 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
             displayData.splitMixCash = sMixCash;
             displayData.splitMixTransfer = sMixTransfer;
             displayData.splitMixChange = sMixChange;
-            displayData.promptPayUrl = sMixTransfer > 0 ? `https://promptpay.io/${pp}/${sMixTransfer.toFixed(2)}.png` : "";
+            // 🟢 [แก้ไขเพิ่ม Custom QR]
+            displayData.promptPayUrl = sMixTransfer > 0 ? (useCustomQR ? customQRUrlStr : `https://promptpay.io/${pp}/${sMixTransfer.toFixed(2)}.png`) : "";
         }
 
         // 🌟 ข้อมูลสำหรับโหมด หารบิลเท่ากัน
@@ -12362,7 +12544,8 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
             let splitCount = splitPersonsData.length || 2;
             displayData.splitPeopleCount = splitCount;
             displayData.splitPerPerson = (numGrandTotal / splitCount).toFixed(2);
-            displayData.promptPayUrl = `https://promptpay.io/${pp}/${displayData.splitPerPerson}.png`;
+            // 🟢 [แก้ไขเพิ่ม Custom QR]
+            displayData.promptPayUrl = useCustomQR ? customQRUrlStr : `https://promptpay.io/${pp}/${displayData.splitPerPerson}.png`;
         }
 
         if(typeof google !== 'undefined' && google.script && google.script.run) {
@@ -16035,7 +16218,8 @@ function calculateChange() {
             if(elCashInput) elCashInput.innerText = currentCash;
         }
     } 
-    else if (typeof selectedPayment !== 'undefined' && (selectedPayment === 'คนละครึ่ง' || selectedPayment === 'เดลิเวอรี่')) { 
+    // 🟢 เพิ่ม 'คิวอาร์โค้ด' เข้ามาในเงื่อนไขนี้ 🟢
+    else if (typeof selectedPayment !== 'undefined' && (selectedPayment === 'คนละครึ่ง' || selectedPayment === 'เดลิเวอรี่' || selectedPayment === 'คิวอาร์โค้ด')) { 
         currentCash = grandTotal.toString();
         if(elCashInput) elCashInput.innerText = currentCash;
     }
@@ -16059,8 +16243,11 @@ function calculateChange() {
     
     let qrAmt = document.getElementById('qrModalAmount');
     let qrImg = document.getElementById('qrModalImage');
+    
     let ppNum = s.promptPay || "";
+    let useCustomQR = s.enableCustomQR && s.customQRUrl;
 
+    // 🟢 [แยกเงื่อนไข] โอนเงิน(พร้อมเพย์) กับ คิวอาร์โค้ด(รูปสำเร็จรูป)
     if(selectedPayment === 'โอนเงิน') {
          if (isSplitIntended) {
               if (ppNum) {
@@ -16073,11 +16260,15 @@ function calculateChange() {
                   if(qrAmt) qrAmt.innerText = '฿' + grandTotal.toFixed(2);
               }
          }
+    } else if (selectedPayment === 'คิวอาร์โค้ด') {
+         if (useCustomQR) {
+              if(qrImg) qrImg.src = s.customQRUrl; // ดึงรูปร้านมาโชว์ตรงๆ เลย
+              if(qrAmt) qrAmt.innerText = '฿' + grandTotal.toFixed(2);
+         }
     }
     
     if(typeof syncCustomerDisplay === 'function') syncCustomerDisplay();
 }
-
 // ============================================
 // [CRM] ฟังก์ชันตรวจสอบสมาชิก & คำนวณแต้ม/โปรโมชั่น (เวอร์ชันสมบูรณ์)
 // ============================================
@@ -16247,15 +16438,19 @@ function calculateSplitMix() {
     let btnConfirm = document.getElementById('btnConfirmSplitMix');
     let qrContainer = document.getElementById('splitMixQRContainer');
     
+    let useCustomQR = globalStoreSettings && globalStoreSettings.enableCustomQR && globalStoreSettings.customQRUrl;
+    let hasPromptPay = globalStoreSettings && globalStoreSettings.promptPay;
+
     if (cashInput > 0) {
         btnConfirm.disabled = false;
         btnConfirm.className = "w-full py-4 mt-4 bg-pink-500 text-white rounded-xl font-bold text-lg hover:bg-pink-600 transition shadow-md";
         btnConfirm.innerText = "✅ ยืนยันชำระเงิน";
         
-        if (transferAmount > 0 && globalStoreSettings && globalStoreSettings.promptPay) {
+        // 🟢 [แก้ไขเพิ่ม Custom QR]
+        if (transferAmount > 0 && (useCustomQR || hasPromptPay)) {
             qrContainer.classList.remove('hidden');
             qrContainer.classList.add('flex');
-            document.getElementById('splitMixQRImage').src = 'https://promptpay.io/' + globalStoreSettings.promptPay + '/' + transferAmount.toFixed(2) + '.png';
+            document.getElementById('splitMixQRImage').src = useCustomQR ? globalStoreSettings.customQRUrl : 'https://promptpay.io/' + globalStoreSettings.promptPay + '/' + transferAmount.toFixed(2) + '.png';
         } else {
             qrContainer.classList.add('hidden');
             qrContainer.classList.remove('flex');
@@ -16302,8 +16497,11 @@ function updateSplitEqualUI(amount) {
     var qrImage = document.getElementById('splitEqualQRImage');
     var pp = globalStoreSettings.promptPay;
     
-    if (pp && pp.trim() !== "" && amount > 0) {
-        qrImage.src = "https://promptpay.io/" + pp + "/" + amount.toFixed(2) + ".png";
+    let useCustomQR = globalStoreSettings.enableCustomQR && globalStoreSettings.customQRUrl;
+
+    // 🟢 [แก้ไขเพิ่ม Custom QR]
+    if ((useCustomQR || (pp && pp.trim() !== "")) && amount > 0) {
+        qrImage.src = useCustomQR ? globalStoreSettings.customQRUrl : "https://promptpay.io/" + pp + "/" + amount.toFixed(2) + ".png";
         qrContainer.classList.remove('hidden');
     } else {
         qrContainer.classList.add('hidden');
@@ -16727,11 +16925,13 @@ function calculateSplitEqual() {
     // คำนวณยอดต่อคน
     let perPerson = parseFloat((grandTotal / peopleCount).toFixed(2));
     
-    // สร้าง QR Code กลาง (ใช้ยอดต่อคน)
-    if (globalStoreSettings && globalStoreSettings.promptPay) {
+    let useCustomQR = globalStoreSettings && globalStoreSettings.enableCustomQR && globalStoreSettings.customQRUrl;
+
+    // 🟢 [แก้ไขเพิ่ม Custom QR] สร้าง QR Code กลาง (ใช้ยอดต่อคน)
+    if (useCustomQR || (globalStoreSettings && globalStoreSettings.promptPay)) {
         document.getElementById('splitEqualQRContainer').classList.remove('hidden');
         document.getElementById('splitEqualPerPersonDisp').innerText = perPerson.toFixed(2);
-        document.getElementById('splitEqualQRImage').src = 'https://promptpay.io/' + globalStoreSettings.promptPay + '/' + perPerson.toFixed(2) + '.png';
+        document.getElementById('splitEqualQRImage').src = useCustomQR ? globalStoreSettings.customQRUrl : 'https://promptpay.io/' + globalStoreSettings.promptPay + '/' + perPerson.toFixed(2) + '.png';
     }
 
     // วาดตารางรับเงินแต่ละคน
@@ -17457,6 +17657,40 @@ window.addEventListener('DOMContentLoaded', (event) => {
 });
 
 // ==========================================
+// QR สำเร็จ
+// ==========================================
+
+// ซ่อน/แสดงกล่องอัปโหลด
+function toggleCustomQRInput() {
+    const isCustom = document.getElementById('toggleCustomQR').checked;
+    const container = document.getElementById('customQRContainer');
+    if (isCustom) {
+        container.classList.remove('hidden');
+    } else {
+        container.classList.add('hidden');
+    }
+}
+
+// พรีวิวรูป QR
+let customQRBase64 = null, customQRMime = null, customQRName = null;
+function previewCustomQR(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('settingCustomQRPreview');
+            preview.src = e.target.result;
+            preview.classList.remove('hidden');
+            
+            customQRBase64 = e.target.result.split(',')[1];
+            customQRMime = file.type;
+            customQRName = file.name;
+        }
+        reader.readAsDataURL(file);
+    }
+}
+
+// ==========================================
 // ใส่คำสั่งโหลดแคชออปชันเผื่อไว้ตอนเปิดเบราว์เซอร์ครั้งแรก
 // ==========================================
 
@@ -17473,5 +17707,6 @@ document.addEventListener('click', function(e) {
 
 
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </body>
 </html>
