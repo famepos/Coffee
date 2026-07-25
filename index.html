@@ -6885,7 +6885,7 @@ function closeCustomQRModal() {
     document.getElementById('customQRModal').classList.add('hidden');
 }
 
-// --- ฟังก์ชันเปิดหน้าต่าง PromptPay (แบบเดิม) ---
+// --- ฟังก์ชันเปิดหน้าต่างชำระเงิน QR (รองรับทั้งแบบขาวดำ และ รูปอัปโหลดเอง) ---
 function openQRModal() {
     let grandTotalText = document.getElementById('modalGrandTotal').innerText.replace('฿', '').replace(',', '');
     let grandTotal = parseFloat(grandTotalText) || 0;
@@ -6895,15 +6895,29 @@ function openQRModal() {
         return;
     }
 
+    // 🌟 ดึงค่าการตั้งค่าจากระบบ (ใช้ชื่อตัวแปรตามในรูปของคุณเป๊ะๆ)
     let promptPayID = globalStoreSettings.promptPay;
-    if (!promptPayID || promptPayID.trim() === "") {
-        if(typeof showToast === 'function') showToast("ยังไม่ได้ตั้งค่าเลขพร้อมเพย์ในหน้าตั้งค่า", "error");
-        return;
+    let useCustom = globalStoreSettings.enableCustomQR; 
+    let customImage = globalStoreSettings.customQRUrl;  
+
+    // เช็กว่าเปิดใช้รูปอัปโหลดเอง และมีรูปอยู่จริงหรือไม่
+    if (useCustom && customImage && customImage.trim() !== "") {
+        // 🟢 กรณีที่ 1: ใช้รูปแม่มณี (K SHOP) หรือรูปที่อัปโหลดเอง
+        document.getElementById('qrModalImage').src = customImage;
+    } else {
+        // 🟢 กรณีที่ 2: สร้าง QR พร้อมเพย์สีขาวดำ
+        if (!promptPayID || promptPayID.trim() === "") {
+            if(typeof showToast === 'function') showToast("ยังไม่ได้ตั้งค่าเลขพร้อมเพย์ในหน้าตั้งค่า", "error");
+            return;
+        }
+        document.getElementById('qrModalImage').src = 'https://promptpay.io/' + promptPayID.replace(/-/g, '') + '/' + grandTotal.toFixed(2) + '.png';
     }
 
-    document.getElementById('qrModalImage').src = 'https://promptpay.io/' + promptPayID.replace(/-/g, '') + '/' + grandTotal.toFixed(2) + '.png';
+    // อัปเดตราคาและเปิด Modal
     document.getElementById('qrModalAmount').innerText = "฿" + grandTotal.toFixed(2);
     document.getElementById('qrModal').classList.remove('hidden');
+    
+    // 🌟 เริ่มนับเวลาและส่งข้อมูลไปบอกหน้าจอลูกค้า (CDS)
     if(typeof startQRTimer === 'function') startQRTimer();
 }
 // ฟังก์ชันปิด Modal
