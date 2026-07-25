@@ -393,28 +393,7 @@ select option:checked {
 <body class="w-full flex overflow-hidden text-gray-800 bg-gray-100">  
 <div id="toastContainer" class="fixed top-5 right-5 z-[10000] flex flex-col gap-3 pointer-events-none w-80"></div>
 
-<div id="loginOverlay" class="fixed inset-0 bg-gradient-to-br from-pink-50 via-white to-pink-100 flex flex-col items-center justify-center z-[9999] p-4">
-  <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-pink-100 flex flex-col items-center text-center">
-    <img src="https://i.postimg.cc/7h052Ffb/daa42c0e-2ccf-455e-9d46-491a67539e44.png" class="w-24 h-24 object-contain mb-4 drop-shadow-md">
-    <h2 class="text-3xl font-bold text-gray-800">FamePOS</h2>
-    <p class="text-gray-500 text-sm mt-1 mb-8">ระบบจัดการร้านค้า ยินดีให้บริการ</p>
-    
-    <div class="space-y-5 w-full text-left">
-      <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1.5">ชื่อพนักงาน หรือ เบอร์โทรศัพท์</label>
-        <input type="text" id="loginUsername" class="w-full p-3.5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition font-medium" placeholder="กรอกชื่อพนักงาน">
-      </div>
-      <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1.5">รหัสผ่าน (PIN)</label>
-        <input type="password" id="loginPassword" class="w-full p-3.5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-center tracking-widest text-2xl font-bold transition" placeholder="••••">
-      </div>
-      <button onclick="processLogin()" id="btnLoginSubmit" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold p-4 rounded-2xl transition duration-200 shadow-md flex items-center justify-center space-x-2 text-lg mt-2">
-        <span>🚀 เข้าสู่ระบบร้านค้า</span>
-      </button>
-    </div>
-  </div>
-  <span class="text-gray-400 text-xs mt-6">Powered by FamePOS</span>
-</div>
+<?!= include('StaffLogin'); ?>
 
 <!-- ปุ่ม 3 ขีด สำหรับเปิดเมนู (แสดงเฉพาะบนมือถือ) -->
 <button onclick="toggleSidebar()" class="md:hidden fixed top-4 left-2 z-[100] bg-white p-2 rounded-xl shadow-md text-pink-600 border border-pink-100 flex items-center justify-center">
@@ -3420,24 +3399,6 @@ class="hidden bg-white p-6 rounded-2xl border border-purple-100 shadow-sm flex-1
     </div>
   </div>
 </div>
-    <!-- ================= หน้าจอ:รีเซ็ตระบบ ================= -->
-
-<div id="factoryWelcomeView" class="hidden fixed inset-0 bg-pink-50 z-[999] flex flex-col items-center justify-center text-center p-6 animate-fade-in">
-    <div class="bg-white p-12 rounded-[2.5rem] shadow-2xl border border-pink-100 flex flex-col items-center max-w-sm w-full">
-        <img src="https://i.postimg.cc/7h052Ffb/daa42c0e-2ccf-455e-9d46-491a67539e44.png" class="w-32 h-32 object-contain mb-4 drop-shadow-md">
-        <h2 class="text-3xl font-bold text-pink-800 mb-1">FamePOS</h2>
-        <p class="text-pink-600 font-bold text-sm mb-6">ระบบจัดการร้านค้าสำเร็จรูป</p>
-        
-        <div class="bg-pink-50 text-pink-800 text-xs p-4 rounded-xl border border-pink-100 mb-6 font-medium leading-relaxed">
-            ✨ รีเซ็ตระบบกลับค่าโรงงานสำเร็จเรียบร้อยแล้ว<br>ฐานข้อมูลทุกชีทถูกทำความสะอาดพร้อมใช้งานใหม่
-        </div>
-        
-        <button onclick="localStorage.removeItem('famepos_user'); window.currentUser = null; window.currentRole = null; window.currentBranch = null; if(typeof loadBranchesData === 'function') loadBranchesData(); document.getElementById('userStatusContainer').innerHTML = ''; document.getElementById('loginUsername').value = ''; document.getElementById('loginPassword').value = ''; document.getElementById('loginOverlay').classList.remove('hidden'); document.getElementById('factoryWelcomeView').classList.add('hidden');" class="w-full py-3.5 bg-pink-500 text-white font-bold rounded-xl text-lg hover:bg-pink-600 transition shadow-md active:scale-95 transform">
-            🚀 เริ่มต้นใช้งานระบบอีกครั้ง
-        </button>
-    </div>
-</div>
-
    
 <!-- ================= หน้าจอ: จัดการโปรโมชั่น ================= -->
 <div id="promotionsManagementView" class="hidden w-full h-full p-6 overflow-y-auto bg-gray-50/50 view-section">
@@ -10415,68 +10376,7 @@ function deleteBranch(rowIdx, name) {
 // ==========================================
 // ตัวแปรระบบ Login & การจัดการสิทธิ์
 // ==========================================
-window.currentUser = null;
-window.currentRole = null;
-window.currentBranch = null;
 
-function processLogin() {
-  let user = document.getElementById('loginUsername').value.trim();
-  let pass = document.getElementById('loginPassword').value.trim(); 
-  
-  if (!user || !pass) { 
-    showToast("กรุณากรอกชื่อผู้ใช้/เบอร์โทรศัพท์ และรหัสผ่านให้ครบถ้วน", "error"); 
-    return; 
-  }
-  
-  let btn = document.getElementById('btnLoginSubmit'); 
-  if (btn) {
-    btn.innerHTML = `<span>⏳ กำลังตรวจสอบข้อมูล...</span>`; 
-    btn.disabled = true; 
-  }
-  
-  google.script.run
-    .withSuccessHandler(function(res) {
-      if (btn) {
-        btn.innerHTML = `<span>🚀 เข้าสู่ระบบร้านค้า</span>`; 
-        btn.disabled = false; 
-      }
-      
-      if (res && res.status === "Success") { 
-        window.currentUser = res.name; 
-        window.currentRole = res.role; 
-        window.currentBranch = res.branch; 
-        
-        localStorage.setItem('famepos_user', JSON.stringify(res)); 
-        showToast(`ยินดีต้อนรับคุณ ${res.name}`, "success");
-        
-        let loginOverlay = document.getElementById('loginOverlay'); 
-        if (loginOverlay) loginOverlay.classList.add('hidden'); 
-        
-        // 🟢 ✅ เพิ่มบรรทัดนี้: สั่งให้สลับไปแสดงหน้าจอขายสินค้า (sales) ทันที
-        showView('sales');
-
-        updateUserStatusUI(); 
-        applyRolePermissions(); 
-        loadProducts(); 
-        loadShiftHistory(); 
-        
-        // 🟢 ย้ายมาไว้ตรงนี้ครับ: โหลด Dropdown หลังจากล็อกอินสำเร็จ
-        renderStoreDropdown(); 
-        
-      } else {
-        let errorMsg = (res && res.message) ? res.message : "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"; 
-        showToast(errorMsg, "error"); 
-      }
-    })
-    .withFailureHandler(function(err) {
-      if (btn) {
-        btn.innerHTML = `<span>🚀 เข้าสู่ระบบร้านค้า</span>`; 
-        btn.disabled = false; 
-      }
-      showToast("ระบบขัดข้อง: " + err.message, "error"); 
-    })
-    .checkLoginGS(user, pass); 
-}
 
 function updateUserStatusUI() {
   let statusBox = document.getElementById('userStatusContainer');
@@ -10528,47 +10428,6 @@ function startDigitalClock() {
   }, 1000);
 }
 
-function processLogout() {
-  // 👉 ใช้ SweetAlert2 ดีไซน์หรูหรา แทนระบบแจ้งเตือนของเบราว์เซอร์
-  Swal.fire({
-    title: '🚪 ยืนยันออกจากระบบ',
-    text: "คุณต้องการออกจากระบบใช่หรือไม่?",
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#f43f5e', // สีชมพูอมแดง pink ให้เข้ากับธีมร้าน
-    cancelButtonColor: '#9ca3af',  // สีเทาปุ่มยกเลิก
-    confirmButtonText: 'ตกลง, ออกจากระบบ',
-    cancelButtonText: 'ยกเลิก',
-    background: '#ffffff',
-    customClass: {
-      popup: 'rounded-[2rem]' // ทำมุมโค้งมนสวยงามตามสไตล์ FamePOS
-    }
-  }).then((result) => {
-    if (result.isConfirmed) {
-      window.currentUser = null;
-      window.currentRole = null;
-      window.currentBranch = null;
-      
-      // ล้างความจำการ Login ในเครื่องออกไป
-      localStorage.removeItem('famepos_user');
-      
-      // 🧹 [เพิ่มโค้ดส่วนนี้] สั่งล้างตะกร้าและรีเซ็ตหน้าจอลูกค้าตอนพนักงานกดออกจากระบบ
-      cart = [];
-      if (typeof syncCustomerDisplay === 'function') {
-          syncCustomerDisplay('idle');
-      }
-      
-      let statusBox = document.getElementById('userStatusContainer');
-      if (statusBox) statusBox.innerHTML = '';
-      
-      document.getElementById('loginUsername').value = "";
-      document.getElementById('loginPassword').value = "";
-      document.getElementById('loginOverlay').classList.remove('hidden'); // ดึงหน้า Login กลับมาบังหน้าจอ
-      
-      showToast("ออกจากระบบเรียบร้อยแล้ว", "success");
-    }
-  });
-}
 
 function applyRolePermissions() {
     let role = window.currentRole;
