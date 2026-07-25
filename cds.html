@@ -63,6 +63,11 @@
 <script>
                 const API_URL = "https://script.google.com/macros/s/AKfycbwHmG_j6fmCAo9AsqWWhwLZ7mGHOeUn7fUAbcZ8a8REopMo0jGoIo_ymhzcSP0eqA_UXg/exec";
 
+                // 🌟 ดึง Store ID จาก URL หรือความจำเดิม
+    const urlParamsStore = new URLSearchParams(window.location.search);
+    const STORE_ID = urlParamsStore.get('storeId') || localStorage.getItem('CURRENT_STORE_ID') || "";
+    if (STORE_ID) { localStorage.setItem('CURRENT_STORE_ID', STORE_ID); }
+
         // 🌟 ตัวแปรสำหรับระบบภาพโฆษณา และ เสียงเรียกคิว
         let adSlides = [];
         let adTimeout = null;
@@ -70,7 +75,7 @@
         let lastAnnouncedQueueTime = 0; // ป้องกันการพูดซ้ำ
 
         // โหลดรูปโฆษณาจากหลังบ้าน
-        fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "getAdSettingsGS" }) })
+        fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "getAdSettingsGS", storeId: STORE_ID }) })
         .then(res => res.json()).then(data => {
             if(data.status === "Success" && data.result) {
                 adSlides = data.result;
@@ -80,7 +85,7 @@
         // ดึงข้อมูลจากแคชเชียร์ทุกๆ 0.5 วินาที
         setInterval(() => {
             document.getElementById('lblDateTime').innerText = new Date().toLocaleTimeString('th-TH');
-            fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "getCDSStateGS" }) })
+            fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "getCDSStateGS", storeId: STORE_ID }) })
             .then(res => res.json()).then(data => {
                 if(data.status === "Success" && data.result) updateUI(JSON.parse(data.result));
             });
