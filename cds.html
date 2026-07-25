@@ -126,8 +126,7 @@
                 window.speechSynthesis.speak(utterance);
             }
         }
-
-        function updateUI(state) {
+function updateUI(state) {
             if(!state) return;
 
             // --- อัปเดตฝั่งซ้าย (บิล) ---
@@ -201,10 +200,9 @@
                     <div class="text-[12rem] font-black leading-none drop-shadow-xl bg-white text-pink-600 px-12 py-4 rounded-[3rem] mt-4">${state.queueNo || "000"}</div>
                 </div>`;
 
-                // ตรวจสอบว่าคิวนี้พูดไปหรือยัง (ดักการพูดซ้ำ)
                 if (state.timestamp && state.timestamp !== lastAnnouncedQueueTime) {
                     lastAnnouncedQueueTime = state.timestamp;
-                    speakQueue(state.queueNo || "000"); // สั่งให้ระบบพูด
+                    speakQueue(state.queueNo || "000"); 
                 }
             }
             else if (state.status === 'cash_payment') {
@@ -231,6 +229,25 @@
                         </div>
                         <div class="text-xl text-gray-500 mb-1 font-bold">ยอดเงินที่ต้องสแกน</div>
                         <div class="text-7xl font-black text-pink-600">฿${safe(state.grandTotal)}</div>
+                    </div>`;
+            }
+            // 🌟 เพิ่มส่วนการแสดงผล ชำระเงินออนไลน์ (Online Payment)
+            else if (state.status === 'online_payment') {
+                // ดึงชื่อแพลตฟอร์มมาแสดง ถ้าไม่มีให้แสดงคำว่า "ช่องทางออนไลน์"
+                let platformName = state.onlinePlatformText || state.paymentMethod || "ช่องทางออนไลน์";
+                
+                rightPanel.innerHTML = `
+                    <div class="text-center fade-in w-full flex flex-col items-center justify-center mt-4">
+                        <div class="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center text-blue-500 text-6xl mx-auto mb-6 shadow-inner">🌐</div>
+                        <h3 class="text-4xl font-black text-blue-600 mb-4">ชำระเงินออนไลน์</h3>
+                        <div class="bg-gradient-to-r from-blue-400 to-blue-500 text-white px-8 py-3 rounded-full text-2xl font-bold mb-4 shadow-md inline-block">
+                            แพลตฟอร์ม: ${platformName}
+                        </div>
+                        <p class="text-lg text-gray-500 mb-8 font-bold">กรุณาทำรายการผ่านแอปพลิเคชันของคุณ</p>
+                        <div class="bg-blue-50 py-8 px-12 rounded-[2.5rem] border-4 border-blue-200 shadow-sm inline-block">
+                            <div class="text-xl text-blue-600 font-bold mb-2">ยอดชำระสุทธิ</div>
+                            <div class="text-7xl font-black text-blue-600">฿${safe(state.grandTotal)}</div>
+                        </div>
                     </div>`;
             }
             else if (state.status === 'delivery_payment') {
