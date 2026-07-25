@@ -10494,7 +10494,7 @@ window.addEventListener('load', function() {
     if (startInput) startInput.value = todayStr;
     if (endInput) endInput.value = todayStr;
 
-    // 🟢 3. ถ้ามีสถานะพนักงานล็อกอินค้างไว้ ให้ดึงข้อมูลมาใช้งานต่อ
+ // 🟢 3. ถ้ามีสถานะพนักงานล็อกอินค้างไว้ ให้ดึงข้อมูลมาใช้งานต่อ
     let savedUser = localStorage.getItem('famepos_user');
     if (savedUser) {
         let res = JSON.parse(savedUser);
@@ -10502,7 +10502,12 @@ window.addEventListener('load', function() {
         window.currentRole = res.role;
         window.currentBranch = res.branch;
         
-        document.getElementById('loginOverlay').classList.add('hidden');
+        // 🌟 แก้ไขตรงนี้: เช็กก่อนว่ามีไอดี loginOverlay อยู่จริงไหม ป้องกันโค้ดพัง!
+        let loginUI = document.getElementById('loginOverlay');
+        if (loginUI) {
+            loginUI.classList.add('hidden');
+        }
+        
         updateUserStatusUI();
         applyRolePermissions();
         
