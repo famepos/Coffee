@@ -6885,7 +6885,7 @@ function closeCustomQRModal() {
     document.getElementById('customQRModal').classList.add('hidden');
 }
 
-// --- ฟังก์ชันเปิดหน้าต่างชำระเงิน QR (รองรับทั้งแบบขาวดำ และ รูปอัปโหลดเอง) ---
+// --- ฟังก์ชันเปิดหน้าต่างชำระเงิน QR (รองรับทั้ง โอนเงิน และ QR Code) ---
 function openQRModal() {
     let grandTotalText = document.getElementById('modalGrandTotal').innerText.replace('฿', '').replace(',', '');
     let grandTotal = parseFloat(grandTotalText) || 0;
@@ -6895,17 +6895,16 @@ function openQRModal() {
         return;
     }
 
-    // 🌟 ดึงค่าการตั้งค่าจากระบบ (ใช้ชื่อตัวแปรตามในรูปของคุณเป๊ะๆ)
     let promptPayID = globalStoreSettings.promptPay;
-    let useCustom = globalStoreSettings.enableCustomQR; 
-    let customImage = globalStoreSettings.customQRUrl;  
+    let useCustom = globalStoreSettings.enableCustomQR;
+    let customImage = globalStoreSettings.customQRUrl;
 
-    // เช็กว่าเปิดใช้รูปอัปโหลดเอง และมีรูปอยู่จริงหรือไม่
-    if (useCustom && customImage && customImage.trim() !== "") {
-        // 🟢 กรณีที่ 1: ใช้รูปแม่มณี (K SHOP) หรือรูปที่อัปโหลดเอง
+    // 🟢 กรณีที่ 1: แคชเชียร์กดปุ่ม "QR Code" (และมีการเปิดตั้งค่ารูป K SHOP ไว้)
+    if (typeof selectedPayment !== 'undefined' && selectedPayment === 'QR Code' && useCustom && customImage && customImage.trim() !== "") {
         document.getElementById('qrModalImage').src = customImage;
-    } else {
-        // 🟢 กรณีที่ 2: สร้าง QR พร้อมเพย์สีขาวดำ
+    } 
+    // 🟢 กรณีที่ 2: แคชเชียร์กดปุ่ม "โอนเงิน" (สร้าง QR พร้อมเพย์ขาวดำ)
+    else {
         if (!promptPayID || promptPayID.trim() === "") {
             if(typeof showToast === 'function') showToast("ยังไม่ได้ตั้งค่าเลขพร้อมเพย์ในหน้าตั้งค่า", "error");
             return;
@@ -6913,11 +6912,8 @@ function openQRModal() {
         document.getElementById('qrModalImage').src = 'https://promptpay.io/' + promptPayID.replace(/-/g, '') + '/' + grandTotal.toFixed(2) + '.png';
     }
 
-    // อัปเดตราคาและเปิด Modal
     document.getElementById('qrModalAmount').innerText = "฿" + grandTotal.toFixed(2);
     document.getElementById('qrModal').classList.remove('hidden');
-    
-    // 🌟 เริ่มนับเวลาและส่งข้อมูลไปบอกหน้าจอลูกค้า (CDS)
     if(typeof startQRTimer === 'function') startQRTimer();
 }
 // ฟังก์ชันปิด Modal
@@ -12339,9 +12335,10 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
                 currentStatus = 'split_equal'; 
             }
         } 
-        else if (paymentModal && !paymentModal.classList.contains('hidden')) {
+   else if (paymentModal && !paymentModal.classList.contains('hidden')) {
             if (selectedPayment === 'เงินสด') currentStatus = "cash_payment";
             else if (selectedPayment === 'โอนเงิน') currentStatus = "qr_payment";
+            else if (selectedPayment === 'QR Code') currentStatus = "qr_payment"; // 🌟 ต้องเพิ่มบรรทัดนี้ ให้หน้าจอลูกค้ารู้ว่าต้องเปลี่ยนเป็นหน้า QR
             else if (selectedPayment === 'คนละครึ่ง') currentStatus = "half_payment";
             else if (selectedPayment === 'เดลิเวอรี่') currentStatus = "delivery_payment";
         }
@@ -12388,10 +12385,13 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
             taxLabel: tLabel, serviceLabel: sLabel,
             tableNo: cart.length === 0 ? "" : (document.getElementById('inputTableNo')?.value || "-"),
             orderType: cart.length === 0 ? "ทานที่ร้าน" : (typeof currentOrderType !== 'undefined' ? currentOrderType : "โต๊ะ"),
-            promptPay: pp,
-            // 🟢 [แก้ไขเพิ่ม Custom QR] ส่งไปให้จอลูกค้า (CDS) รู้ว่าต้องใช้รูปอะไร
-            useCustomQR: useCustomQR,
-            customQrUrl: customQRUrlStr, // 👈 แก้ตรงนี้ครับ! เปลี่ยนตัว R เป็นตัวพิมพ์เล็ก (r) ให้ตรงกับจอลูกค้า
+     promptPay: pp,
+            
+            useCustomQR: (typeof selectedPayment !== 'undefined' && selectedPayment === 'QR Code' && useCustomQR),
+            customQrUrl: (typeof selectedPayment !== 'undefined' && selectedPayment === 'QR Code' && useCustomQR) ? customQRUrlStr : "",
+            
+            deliveryAppText: document.getElementById('deliveryAppSelectedText') ? document.getElementById('deliveryAppSelectedText').innerText : "",
+            
             
             deliveryAppText: document.getElementById('deliveryAppSelectedText') ? document.getElementById('deliveryAppSelectedText').innerText : "",
             deliveryOrderId: document.getElementById('inputDeliveryOrderId') ? document.getElementById('inputDeliveryOrderId').value : "",
