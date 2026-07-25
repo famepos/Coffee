@@ -12391,7 +12391,7 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
             promptPay: pp,
             // 🟢 [แก้ไขเพิ่ม Custom QR] ส่งไปให้จอลูกค้า (CDS) รู้ว่าต้องใช้รูปอะไร
             useCustomQR: useCustomQR,
-            customQRUrl: customQRUrlStr,
+            customQrUrl: customQRUrlStr, // 👈 แก้ตรงนี้ครับ! เปลี่ยนตัว R เป็นตัวพิมพ์เล็ก (r) ให้ตรงกับจอลูกค้า
             
             deliveryAppText: document.getElementById('deliveryAppSelectedText') ? document.getElementById('deliveryAppSelectedText').innerText : "",
             deliveryOrderId: document.getElementById('inputDeliveryOrderId') ? document.getElementById('inputDeliveryOrderId').value : "",
