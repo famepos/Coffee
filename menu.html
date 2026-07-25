@@ -258,7 +258,7 @@
         };
 
         // ⚠️ อย่าลืมเปลี่ยนเป็นลิงก์ API ตัวล่าสุดของคุณด้วยนะครับ ถ้ามีการเปลี่ยนแปลง
-        const API_URL = "https://script.google.com/macros/s/AKfycbwHmG_j6fmCAo9AsqWWhwLZ7mGHOeUn7fUAbcZ8a8REopMo0jGoIo_ymhzcSP0eqA_UXg/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbwaXqbOFGMQltGnk-oLbKbyA65NxXGK3T4QeOog9bLTcGpIiGmQsWQOsG8N4yj8BNUpQQ/exec"; 
         
         let allProducts = [];
         let cart = [];
@@ -763,7 +763,7 @@
 
         function closeHistoryModal() { document.getElementById('orderHistoryModal').classList.add('hidden'); }
 
-        function submitOrder() {
+     function submitOrder() {
             if(cart.length === 0) return showAlert("ตะกร้าว่างเปล่า", "กรุณาเลือกเมนูอาหารที่ต้องการก่อนกดสั่งซื้อนะครับ", "🛒", "error");
             if(currentTable === "ไม่ระบุ") return showAlert("เกิดข้อผิดพลาด", "ไม่สามารถส่งออเดอร์ได้ เนื่องจากระบบไม่ทราบหมายเลขโต๊ะ", "❌", "error");
             
@@ -781,13 +781,26 @@
             })
             .then(res => res.json())
             .then(data => {
-                if(data.status === "Success" && data.result === "Success") {
+                // 🟢 แก้ไขตรงนี้ให้ระบบอ่าน Object ได้ทะลุปรุโปร่ง ป้องกันบั๊ก [object Object]
+                let isSuccess = false;
+                if (data.status === "Success") {
+                    if (data.result === "Success") isSuccess = true;
+                    if (data.result && data.result.status === "Success") isSuccess = true;
+                }
+                
+                if(isSuccess) {
                     hasOrderedThisSession = true; 
                     showAlert("ส่งออเดอร์สำเร็จ!", "รายการอาหารของคุณถูกส่งเข้าครัวเรียบร้อยแล้ว นั่งรอรับความอร่อยได้เลยครับ", "✅", "success");
                     saveOrderToLocalHistory(cart, total); 
                     cart = []; updateCartUI(); closeCartModal();
                 } else {
-                    showAlert("เกิดข้อผิดพลาด", "ระบบส่งออเดอร์ไม่ได้: " + (data.message || data.result), "❌", "error");
+                    let errMsg = data.message || "เซิร์ฟเวอร์ปฏิเสธการส่งออเดอร์";
+                    if (data.result && data.result.message) {
+                        errMsg = data.result.message;
+                    } else if (typeof data.result === "string") {
+                        errMsg = data.result;
+                    }
+                    showAlert("เกิดข้อผิดพลาด", "ระบบส่งออเดอร์ไม่ได้: " + errMsg, "❌", "error");
                 }
                 btn.disabled = false; btn.innerHTML = "ส่งออเดอร์เข้าครัว 🔥";
             })
@@ -796,7 +809,6 @@
                 btn.disabled = false; btn.innerHTML = "ส่งออเดอร์เข้าครัว 🔥";
             });
         }
-
         let customerTimerInterval = null;
         function startCustomerCountdown(endTimeStr) {
             if (customerTimerInterval) clearInterval(customerTimerInterval);
