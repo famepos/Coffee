@@ -6885,7 +6885,7 @@ function closeCustomQRModal() {
     document.getElementById('customQRModal').classList.add('hidden');
 }
 
-// --- ฟังก์ชันเปิดหน้าต่างชำระเงิน QR (รองรับทั้ง โอนเงิน และ QR Code) ---
+// --- ฟังก์ชันเปิดหน้าต่างชำระเงิน QR ---
 function openQRModal() {
     let grandTotalText = document.getElementById('modalGrandTotal').innerText.replace('฿', '').replace(',', '');
     let grandTotal = parseFloat(grandTotalText) || 0;
@@ -6899,14 +6899,16 @@ function openQRModal() {
     let useCustom = globalStoreSettings.enableCustomQR;
     let customImage = globalStoreSettings.customQRUrl;
 
-    // 🟢 กรณีที่ 1: แคชเชียร์กดปุ่ม "QR Code" (และมีการเปิดตั้งค่ารูป K SHOP ไว้)
-    if (typeof selectedPayment !== 'undefined' && selectedPayment === 'QR Code' && useCustom && customImage && customImage.trim() !== "") {
+    // 🌟 เช็กชื่อปุ่มให้ครอบคลุม (เผื่อชื่อปุ่มมีเว้นวรรค)
+    let isQRBtn = (typeof selectedPayment !== 'undefined' && (selectedPayment === 'QR Code' || selectedPayment === 'QR'));
+
+    if (isQRBtn && useCustom && customImage && customImage.trim() !== "") {
+        // 🟢 ถ้ากดปุ่ม "QR Code" ให้โชว์ K SHOP
         document.getElementById('qrModalImage').src = customImage;
-    } 
-    // 🟢 กรณีที่ 2: แคชเชียร์กดปุ่ม "โอนเงิน" (สร้าง QR พร้อมเพย์ขาวดำ)
-    else {
+    } else {
+        // 🟢 ถ้ากดปุ่ม "โอนเงิน" หรืออื่นๆ ให้สร้าง QR ขาวดำ
         if (!promptPayID || promptPayID.trim() === "") {
-            if(typeof showToast === 'function') showToast("ยังไม่ได้ตั้งค่าเลขพร้อมเพย์ในหน้าตั้งค่า", "error");
+            if(typeof showToast === 'function') showToast("ยังไม่ได้ตั้งค่าเลขพร้อมเพย์", "error");
             return;
         }
         document.getElementById('qrModalImage').src = 'https://promptpay.io/' + promptPayID.replace(/-/g, '') + '/' + grandTotal.toFixed(2) + '.png';
@@ -12326,7 +12328,6 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
         let splitModal = document.getElementById('splitPaymentModal');
         let qrModal = document.getElementById('qrModal');
         
-        // 🟢 เช็คสถานะโหมดแบ่งจ่าย
         if (splitModal && !splitModal.classList.contains('hidden')) {
             let mixView = document.getElementById('splitMixView');
             if (mixView && !mixView.classList.contains('hidden')) {
@@ -12335,10 +12336,10 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
                 currentStatus = 'split_equal'; 
             }
         } 
-   else if (paymentModal && !paymentModal.classList.contains('hidden')) {
+        else if (paymentModal && !paymentModal.classList.contains('hidden')) {
             if (selectedPayment === 'เงินสด') currentStatus = "cash_payment";
             else if (selectedPayment === 'โอนเงิน') currentStatus = "qr_payment";
-            else if (selectedPayment === 'QR Code') currentStatus = "qr_payment"; // 🌟 ต้องเพิ่มบรรทัดนี้ ให้หน้าจอลูกค้ารู้ว่าต้องเปลี่ยนเป็นหน้า QR
+            else if (selectedPayment === 'QR Code' || selectedPayment === 'QR') currentStatus = "qr_payment"; // 🌟 ดักปุ่ม QR
             else if (selectedPayment === 'คนละครึ่ง') currentStatus = "half_payment";
             else if (selectedPayment === 'เดลิเวอรี่') currentStatus = "delivery_payment";
         }
@@ -12360,7 +12361,6 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
         if (typeof globalStoreSettings !== 'undefined') {
             tLabel = globalStoreSettings.enableTax ? `ภาษีมูลค่าเพิ่ม ${globalStoreSettings.taxAmount}${globalStoreSettings.taxType === 'percent' ? '%' : ' บาท'}` : "ภาษีมูลค่าเพิ่ม";
             sLabel = globalStoreSettings.enableService ? `ค่าบริการ ${globalStoreSettings.serviceValue}${globalStoreSettings.serviceType === 'percent' ? '%' : ' บาท'}` : "ค่าบริการ";
-            
             useCustomQR = globalStoreSettings.enableCustomQR;
             customQRUrlStr = globalStoreSettings.customQRUrl || "";
         }
@@ -12377,6 +12377,9 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
         });
 
         let pp = typeof globalStoreSettings !== 'undefined' ? globalStoreSettings.promptPay : "0000000000";
+        
+        // 🌟 เช็กว่าคลิกปุ่ม QR หรือไม่
+        let isQRBtn = (typeof selectedPayment !== 'undefined' && (selectedPayment === 'QR Code' || selectedPayment === 'QR'));
 
         let displayData = {
             status: currentStatus,
@@ -12385,13 +12388,11 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
             taxLabel: tLabel, serviceLabel: sLabel,
             tableNo: cart.length === 0 ? "" : (document.getElementById('inputTableNo')?.value || "-"),
             orderType: cart.length === 0 ? "ทานที่ร้าน" : (typeof currentOrderType !== 'undefined' ? currentOrderType : "โต๊ะ"),
-     promptPay: pp,
+            promptPay: pp,
             
-            useCustomQR: (typeof selectedPayment !== 'undefined' && selectedPayment === 'QR Code' && useCustomQR),
-            customQrUrl: (typeof selectedPayment !== 'undefined' && selectedPayment === 'QR Code' && useCustomQR) ? customQRUrlStr : "",
-            
-            deliveryAppText: document.getElementById('deliveryAppSelectedText') ? document.getElementById('deliveryAppSelectedText').innerText : "",
-            
+            // 🌟 ส่งภาพ K SHOP ไปหน้าจอลูกค้า เฉพาะตอนกดปุ่ม "QR Code" เท่านั้น
+            useCustomQR: (isQRBtn && useCustomQR),
+            customQrUrl: (isQRBtn && useCustomQR) ? customQRUrlStr : "",
             
             deliveryAppText: document.getElementById('deliveryAppSelectedText') ? document.getElementById('deliveryAppSelectedText').innerText : "",
             deliveryOrderId: document.getElementById('inputDeliveryOrderId') ? document.getElementById('inputDeliveryOrderId').value : "",
@@ -12412,8 +12413,9 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
             displayData.splitMixCash = sMixCash;
             displayData.splitMixTransfer = sMixTransfer;
             displayData.splitMixChange = sMixChange;
-            // 🟢 [แก้ไขเพิ่ม Custom QR]
-            displayData.promptPayUrl = sMixTransfer > 0 ? (useCustomQR ? customQRUrlStr : `https://promptpay.io/${pp}/${sMixTransfer.toFixed(2)}.png`) : "";
+            
+            // 🟢 บังคับใช้ QR ขาวดำเสมอ (ห้ามใช้ K SHOP เด็ดขาด)
+            displayData.promptPayUrl = sMixTransfer > 0 ? `https://promptpay.io/${pp}/${sMixTransfer.toFixed(2)}.png` : "";
         }
 
         // 🌟 ข้อมูลสำหรับโหมด หารบิลเท่ากัน
@@ -12422,8 +12424,9 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
             let splitCount = splitPersonsData.length || 2;
             displayData.splitPeopleCount = splitCount;
             displayData.splitPerPerson = (numGrandTotal / splitCount).toFixed(2);
-            // 🟢 [แก้ไขเพิ่ม Custom QR]
-            displayData.promptPayUrl = useCustomQR ? customQRUrlStr : `https://promptpay.io/${pp}/${displayData.splitPerPerson}.png`;
+            
+            // 🟢 บังคับใช้ QR ขาวดำเสมอ (ห้ามใช้ K SHOP เด็ดขาด)
+            displayData.promptPayUrl = `https://promptpay.io/${pp}/${displayData.splitPerPerson}.png`;
         }
 
         if(typeof google !== 'undefined' && google.script && google.script.run) {
