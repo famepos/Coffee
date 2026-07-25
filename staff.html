@@ -110,6 +110,11 @@
     // 🔗 1. API URL ของระบบหลังบ้านคุณ
             const API_URL = "https://script.google.com/macros/s/AKfycbwHmG_j6fmCAo9AsqWWhwLZ7mGHOeUn7fUAbcZ8a8REopMo0jGoIo_ymhzcSP0eqA_UXg/exec";
 
+            // 🌟 ดึง Store ID จาก URL หรือความจำเดิม
+    const urlParamsStore = new URLSearchParams(window.location.search);
+    const STORE_ID = urlParamsStore.get('storeId') || localStorage.getItem('CURRENT_STORE_ID') || "";
+    if (STORE_ID) { localStorage.setItem('CURRENT_STORE_ID', STORE_ID); }
+
 
     // 🪄 2. MAGIC PROXY
     const google = {
@@ -125,7 +130,7 @@
                 fetch(API_URL, {
                   method: "POST",
                   headers: { "Content-Type": "text/plain;charset=utf-8" },
-                  body: JSON.stringify({ action: prop, args: args })
+                  body: JSON.stringify({ action: prop, args: args, storeId: STORE_ID })
                 })
                 .then(res => res.json())
                 .then(data => {
