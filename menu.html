@@ -259,6 +259,11 @@
 
         // ⚠️ อย่าลืมเปลี่ยนเป็นลิงก์ API ตัวล่าสุดของคุณด้วยนะครับ ถ้ามีการเปลี่ยนแปลง
         const API_URL = "https://script.google.com/macros/s/AKfycbwHmG_j6fmCAo9AsqWWhwLZ7mGHOeUn7fUAbcZ8a8REopMo0jGoIo_ymhzcSP0eqA_UXg/exec";
+
+        // 🌟 ดึง Store ID จาก URL หรือความจำเดิม
+    const urlParamsStore = new URLSearchParams(window.location.search);
+    const STORE_ID = urlParamsStore.get('storeId') || localStorage.getItem('CURRENT_STORE_ID') || "";
+    if (STORE_ID) { localStorage.setItem('CURRENT_STORE_ID', STORE_ID); }
         
         let allProducts = [];
         let cart = [];
@@ -353,7 +358,7 @@
                     fetch(API_URL, {
                         method: "POST",
                         headers: { "Content-Type": "text/plain;charset=utf-8" },
-                        body: JSON.stringify({ action: "requestBillGS", args: [currentTable] }),
+                        body: JSON.stringify({ action: "requestBillGS", args: [currentTable], storeId: STORE_ID }),
                         redirect: "follow"
                     })
                     .then(res => res.json())
@@ -391,7 +396,7 @@
             fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify({ action: "getProducts" }), 
+                body: JSON.stringify({ action: "getProducts", storeId: STORE_ID }), 
                 redirect: "follow"
             })
             .then(res => res.json())
@@ -411,7 +416,7 @@
             fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify({ action: "getModifiersData" }),
+                body: JSON.stringify({ action: "getModifiersData", storeId: STORE_ID }),
                 redirect: "follow"
             })
             .then(res => res.json())
@@ -423,7 +428,7 @@
             fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify({ action: "getProducts" }),
+                body: JSON.stringify({ action: "getProducts" , storeId: STORE_ID }),
                 redirect: "follow"
             })
             .then(res => res.json())
@@ -433,7 +438,7 @@
             fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify({ action: "getModifiersData" }),
+                body: JSON.stringify({ action: "getModifiersData" , storeId: STORE_ID }),
                 redirect: "follow"
             })
             .then(res => res.json())
@@ -444,7 +449,7 @@
                 fetch(API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify({ action: "getTablesData" }),
+                    body: JSON.stringify({ action: "getTablesData", storeId: STORE_ID  }),
                     redirect: "follow"
                 })
                 .then(res => res.json())
@@ -776,7 +781,7 @@
             fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify({ action: "submitCustomerOrder", args: [orderPayload] }),
+                body: JSON.stringify({ action: "submitCustomerOrder", args: [orderPayload] , storeId: STORE_ID }),
                 redirect: "follow"
             })
             .then(res => res.json())
@@ -844,10 +849,10 @@
                     currentTable = urlParams.get('table').trim();
                     document.getElementById('tableDisplay').innerHTML = `<div class="text-center leading-tight">โต๊ะ: ${currentTable}</div>`;
 
-                    fetch(API_URL,{
+                fetch(API_URL,{
                         method:"POST",
                         headers:{"Content-Type":"text/plain;charset=utf-8"},
-                        body:JSON.stringify({ action:"getTablesData" }),
+                        body:JSON.stringify({ action:"getTablesData", storeId: STORE_ID }), 
                         redirect:"follow"
                     })
                     .then(res => res.json())
@@ -866,12 +871,13 @@
 
                                 buffetIncludedCategories = [];
 
-                                fetch(API_URL,{
+                            fetch(API_URL,{
                                     method:"POST",
                                     headers:{"Content-Type":"text/plain;charset=utf-8"},
                                     body:JSON.stringify({
                                         action: "getBuffetCategoriesByPackageGS", 
-                                        args: [myTable.packageName || ""]
+                                        args: [myTable.packageName || ""],
+                                        storeId: STORE_ID
                                     }),
                                     redirect:"follow"
                                 })
