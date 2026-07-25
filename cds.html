@@ -133,11 +133,12 @@ function updateUI(state) {
             const setText = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
             const safe = (val) => isNaN(parseFloat(val)) ? "0.00" : parseFloat(val).toFixed(2);
             
-            let displayType = "โต๊ะ: " + (state.tableNo || "-");
-            if(state.orderType === "กลับบ้าน") displayType = "🛍️ กลับบ้าน";
-            else if(state.orderType === "เดลิเวอรี่") displayType = "🛵 ส่งของ";
-            if (!state.cart || state.cart.length === 0) displayType = "โต๊ะ: -";
-            setText('lblTableNo', displayType);
+  let displayType = "โต๊ะ: " + (state.tableNo || "-");
+if(state.orderType === "กลับบ้าน") displayType = "🛍️ กลับบ้าน";
+else if(state.orderType === "เดลิเวอรี่") displayType = "🛵 เดลิเวอรี่";
+else if(state.orderType === "ออนไลน์") displayType = "🌐 ออนไลน์ " + (state.tableNo || ""); // 🌟 เพิ่มบรรทัดนี้เข้ามา
+if (!state.cart || state.cart.length === 0) displayType = "โต๊ะ: -";
+setText('lblTableNo', displayType);
 
             setText('txtSubTotal', safe(state.subTotal));
             setText('txtTax', safe(state.vat));
@@ -218,19 +219,22 @@ function updateUI(state) {
                         </div>
                     </div>`;
             }
-            else if (state.status === 'qr_payment') {
-                rightPanel.innerHTML = `
-                    <div class="text-center fade-in w-full flex flex-col items-center justify-center mt-8">
-                        <h3 class="text-3xl font-bold text-pink-700 mb-2">📱 สแกน QR Code เพื่อชำระเงิน</h3>
-                        <p class="text-lg text-gray-400 mb-6 font-medium">กรุณาสแกนจ่ายเงินภายในเวลาที่กำหนด</p>
-                        ${timerHtml}
-                        <div class="bg-white p-4 rounded-3xl border-4 border-pink-100 mb-8 shadow-inner inline-block">
-                            <img src="https://promptpay.io/${state.promptPay || '0000000000'}/${safe(state.grandTotal)}.png" class="w-72 h-72 object-contain rounded-xl">
-                        </div>
-                        <div class="text-xl text-gray-500 mb-1 font-bold">ยอดเงินที่ต้องสแกน</div>
-                        <div class="text-7xl font-black text-pink-600">฿${safe(state.grandTotal)}</div>
-                    </div>`;
-            }
+     else if (state.status === 'qr_payment') {
+    // 🌟 เช็กว่ามีลิงก์รูป QR แบบอัปโหลดเอง (customQrUrl) ส่งมาไหม ถ้าไม่มีให้สร้างจาก promptpay.io
+    let qrImageSrc = state.customQrUrl ? state.customQrUrl : `https://promptpay.io/${state.promptPay || '0000000000'}/${safe(state.grandTotal)}.png`;
+    
+    rightPanel.innerHTML = `
+        <div class="text-center fade-in w-full flex flex-col items-center justify-center mt-8">
+            <h3 class="text-3xl font-bold text-pink-700 mb-2">📱 สแกน QR Code เพื่อชำระเงิน</h3>
+            <p class="text-lg text-gray-400 mb-6 font-medium">กรุณาสแกนจ่ายเงินภายในเวลาที่กำหนด</p>
+            ${timerHtml}
+            <div class="bg-white p-4 rounded-3xl border-4 border-pink-100 mb-8 shadow-inner inline-block">
+                <img src="${qrImageSrc}" class="w-72 h-72 object-contain rounded-xl">
+            </div>
+            <div class="text-xl text-gray-500 mb-1 font-bold">ยอดเงินที่ต้องสแกน</div>
+            <div class="text-7xl font-black text-pink-600">฿${safe(state.grandTotal)}</div>
+        </div>`;
+}
             // 🌟 เพิ่มส่วนการแสดงผล ชำระเงินออนไลน์ (Online Payment)
             else if (state.status === 'online_payment') {
                 // ดึงชื่อแพลตฟอร์มมาแสดง ถ้าไม่มีให้แสดงคำว่า "ช่องทางออนไลน์"
