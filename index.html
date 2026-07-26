@@ -12393,8 +12393,9 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
 
 let pp = typeof globalStoreSettings !== 'undefined' ? globalStoreSettings.promptPay : "0000000000";
 
-        // 🌟 1. เพิ่มบรรทัดนี้: เช็กว่าแคชเชียร์เลือกกดปุ่ม "QR Code" หรือไม่
-        let isQRBtn = (typeof selectedPayment !== 'undefined' && (selectedPayment === 'QR Code' || selectedPayment === 'QR'));
+        // 🌟 1. เช็กสถานะจากหน้าต่างป๊อปอัปโดยตรง ชัวร์ 100% ว่าตอนนี้โชว์รูปอะไรอยู่
+        let customQRModalPopup = document.getElementById('customQRModal');
+        let isCustomModalOpen = customQRModalPopup && !customQRModalPopup.classList.contains('hidden');
 
         let displayData = {
             status: currentStatus,
@@ -12405,9 +12406,9 @@ let pp = typeof globalStoreSettings !== 'undefined' ? globalStoreSettings.prompt
             orderType: cart.length === 0 ? "ทานที่ร้าน" : (typeof currentOrderType !== 'undefined' ? currentOrderType : "โต๊ะ"),
             promptPay: pp,
             
-            // 🌟 2. แก้ไขตรงนี้: บังคับส่งรูป K SHOP ไปให้หน้าจอลูกค้า "เฉพาะตอนกดปุ่ม QR Code เท่านั้น"
-            useCustomQR: (isQRBtn && useCustomQR),
-            customQrUrl: (isQRBtn && useCustomQR) ? customQRUrlStr : "",
+            // 🌟 2. ถ้าหน้าต่าง "สแกน QR Code ร้านค้า (รูปอัปโหลด)" เปิดอยู่ ค่อยส่งลิงก์รูปไป!
+            useCustomQR: isCustomModalOpen,
+            customQrUrl: isCustomModalOpen ? customQRUrlStr : "",
             
             deliveryAppText: document.getElementById('deliveryAppSelectedText') ? document.getElementById('deliveryAppSelectedText').innerText : "",
             deliveryOrderId: document.getElementById('inputDeliveryOrderId') ? document.getElementById('inputDeliveryOrderId').value : "",
