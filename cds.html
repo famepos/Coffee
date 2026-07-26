@@ -277,20 +277,33 @@ setText('lblTableNo', displayType);
                         </div>
                     </div>`;
             }
-            else if (state.status === 'half_payment') {
+ else if (state.status === 'half_payment') {
+                // 🌟 ดึงยอดรวมมาคำนวณ
+                let total = parseFloat(state.grandTotal) || 0;
+                
+                // 🌟 รัฐออกให้ 60% แต่ล็อกเพดานไว้สูงสุดไม่เกิน 200 บาท
+                let govShare = total * 0.6;
+                if (govShare > 200) {
+                    govShare = 200;
+                }
+                
+                // 🌟 ลูกค้าจ่ายส่วนที่เหลือ (ยอดรวม - ส่วนที่รัฐออกให้)
+                let customerShare = total - govShare;
+
                 rightPanel.innerHTML = `
                     <div class="text-center fade-in w-full px-6">
                         <div class="text-4xl font-bold text-orange-600 mb-8">โครงการ คนละครึ่ง (ไทยช่วยไทย)</div>
                         <div class="flex gap-4 w-full">
-                            <div class="flex-1 bg-orange-50 border-4 border-orange-200 rounded-[2rem] p-6 shadow-sm">
-                                <div class="text-xl font-bold text-orange-600 mb-2">ลูกค้าจ่าย (40%)</div>
-                                <div class="text-5xl font-black text-orange-700">฿${(state.grandTotal * 0.4).toFixed(2)}</div>
+                            <div class="flex-1 bg-orange-50 border-4 border-orange-200 rounded-[2rem] p-6 shadow-sm flex flex-col justify-center">
+                                <div class="text-xl font-bold text-orange-600 mb-2">ลูกค้าจ่ายส่วนของตน</div>
+                                <div class="text-5xl font-black text-orange-700">฿${customerShare.toFixed(2)}</div>
                             </div>
-                            <div class="flex-1 bg-purple-50 border-4 border-purple-200 rounded-[2rem] p-6 shadow-sm">
-                                <div class="text-xl font-bold text-purple-300 mb-2">รัฐออกให้ (60%)</div>
-                                <div class="text-5xl font-black text-purple-400">฿${(state.grandTotal * 0.6).toFixed(2)}</div>
+                            <div class="flex-1 bg-purple-50 border-4 border-purple-200 rounded-[2rem] p-6 shadow-sm flex flex-col justify-center">
+                                <div class="text-xl font-bold text-purple-300 mb-2">รัฐออกให้ (สูงสุด 200 ฿)</div>
+                                <div class="text-5xl font-black text-purple-400">฿${govShare.toFixed(2)}</div>
                             </div>
                         </div>
+                        <p class="text-gray-400 font-bold text-sm mt-6">* รัฐช่วยจ่าย 60% ของยอดซื้อ แต่ไม่เกิน 200 บาท/บิล</p>
                     </div>`;
             }
             else if (state.status === 'split_mix') {
