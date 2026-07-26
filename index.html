@@ -2070,7 +2070,7 @@ class="hidden bg-white p-6 rounded-2xl border border-purple-100 shadow-sm flex-1
                 <!-- คนละครึ่ง -->
                 <div class="flex justify-between items-center bg-gray-50 p-5 rounded-xl border border-gray-100">
                     <span class="font-bold text-lg text-gray-700">
-                        คนละครึ่ง
+                        โครงการรัฐร่วมจ่าย
                     </span>
 
                     <label class="relative inline-flex items-center cursor-pointer">
@@ -4128,7 +4128,7 @@ class="hidden bg-white p-6 rounded-2xl border border-purple-100 shadow-sm flex-1
     <div class="text-xs space-y-1 mb-2">
         <div class="flex justify-between"><span>เงินสด:</span><span id="printShiftChannelCash"></span></div>
         <div class="flex justify-between"><span>โอน/สแกน:</span><span id="printShiftTransfer"></span></div>
-        <div class="flex justify-between"><span>คนละครึ่ง:</span><span id="printShiftHalf"></span></div>
+        <div class="flex justify-between"><span>โครงการรัฐร่วมจ่าย:</span><span id="printShiftHalf"></span></div>
         <div class="flex justify-between"><span>แบ่งจ่าย:</span><span id="printShiftSplit"></span></div>
     </div>
     
@@ -6122,7 +6122,7 @@ function renderPaymentButtons() {
         // 🟢 แก้ไขเฉพาะปุ่ม "QR Code": สั่งให้เปิดหน้าต่างรูปภาพขึ้นมาเลยเมื่อกดปุ่ม
         if (s.enableCustomQR) container.innerHTML += '<button onclick="setPaymentType(\'คิวอาร์โค้ด\'); setTimeout(openCustomQRModal, 100);" id="btnคิวอาร์โค้ด" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition hover:bg-gray-50">QR Code</button>';
 
-        if (s.enableHalf) container.innerHTML += '<button onclick="setPaymentType(\'คนละครึ่ง\')" id="btnคนละครึ่ง" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition hover:bg-gray-50">คนละครึ่ง</button>';
+        if (s.enableHalf) container.innerHTML += '<button onclick="setPaymentType(\'โครงการรัฐร่วมจ่าย\')" id="โครงการรัฐร่วมจ่าย" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition hover:bg-gray-50">โครงการรัฐร่วมจ่าย</button>';
         
         if (s.enableSplit) {
             container.innerHTML += '<button onclick="openSplitPaymentModal()" id="btnแบ่งจ่าย" class="flex-1 min-w-[80px] p-3 rounded-xl border-2 border-gray-200 text-gray-500 font-bold bg-white transition hover:bg-gray-50">แบ่งจ่าย</button>';
@@ -6131,7 +6131,7 @@ function renderPaymentButtons() {
         if (isCashEnabled) setPaymentType('เงินสด');
         else if (s.enableTransfer) setPaymentType('โอนเงิน');
         else if (s.enableCustomQR) setPaymentType('คิวอาร์โค้ด');
-        else if (s.enableHalf) setPaymentType('คนละครึ่ง');
+        else if (s.enableHalf) setPaymentType('โครงการรัฐร่วมจ่าย');
     }
 }
 
@@ -6140,12 +6140,12 @@ function setPaymentType(type) {
     let isCashEnabled = s.enableCash !== false;
     if (type === 'เงินสด' && !isCashEnabled) return;
     if (type === 'โอนเงิน' && !s.enableTransfer) return;
-    if (type === 'คนละครึ่ง' && !s.enableHalf) return;
+    if (type === 'โครงการรัฐร่วมจ่าย' && !s.enableHalf) return;
     if (type === 'เดลิเวอรี่' && (!s.enableDeliveryPayment || currentOrderType !== 'เดลิเวอรี่')) return;
 
     selectedPayment = type;
     
-    ['เงินสด', 'โอนเงิน', 'คนละครึ่ง', 'เดลิเวอรี่'].forEach(function(id) {
+    ['เงินสด', 'โอนเงิน', 'โครงการรัฐร่วมจ่าย', 'เดลิเวอรี่'].forEach(function(id) {
          let btn = document.getElementById('btn' + id);
          if(btn) {
            if(id === type) {
@@ -6187,7 +6187,7 @@ function setPaymentType(type) {
         let qModal = document.getElementById('qrModal');
         if(qModal) qModal.classList.add('hidden');
     } 
-    else if (type === 'คนละครึ่ง') {
+    else if (type === 'โครงการรัฐร่วมจ่าย') {
         cashSec.classList.remove('hidden'); clearInterval(qrTimerInterval);
         numBtns.forEach(b => { b.style.opacity = "0.4"; b.style.pointerEvents = "none"; });
     }
@@ -6271,7 +6271,7 @@ function checkout() {
 }
 
 function handleNum(num) {
-    if (selectedPayment === 'โอนเงิน' || selectedPayment === 'คนละครึ่ง' || selectedPayment === 'เดลิเวอรี่') return;
+    if (selectedPayment === 'โอนเงิน' || selectedPayment === 'โครงการรัฐร่วมจ่าย' || selectedPayment === 'เดลิเวอรี่') return;
     
     if (num === 'C') currentCash = "0";
     else if (num === '⌫') currentCash = currentCash.length > 1 ? currentCash.slice(0, -1) : "0";
@@ -6415,7 +6415,7 @@ function confirmPayment() {
     let finalPaymentType = selectedPayment;
     
     if (selectedPayment === 'เงินสด') { exactCash = cash; } 
-    else if (selectedPayment === 'คนละครึ่ง') { exactCash = grandTotal; } 
+    else if (selectedPayment === 'โครงการรัฐร่วมจ่าย') { exactCash = grandTotal; } 
     else if (selectedPayment === 'โอนเงิน') {
         if (isSplitIntended) { exactCash = cash; exactTransfer = grandTotal - cash; finalPaymentType = 'แบ่งจ่าย'; } 
         else { exactTransfer = grandTotal; }
@@ -6524,7 +6524,7 @@ function confirmPayment() {
             if(elCash) {
                 let displayCashVal = (finalPaymentType === 'เงินสด') ? parseFloat(res.cashReceived) : exactCash;
                 elCash.innerText = displayCashVal.toFixed(2);
-                let showCash = (finalPaymentType === 'เงินสด' || finalPaymentType === 'แบ่งจ่าย' || finalPaymentType === 'คนละครึ่ง' || displayCashVal > 0);
+                let showCash = (finalPaymentType === 'เงินสด' || finalPaymentType === 'แบ่งจ่าย' || finalPaymentType === 'โครงการรัฐร่วมจ่าย' || displayCashVal > 0);
                 elCash.parentElement.style.display = showCash ? 'flex' : 'none';
             }
             let elTrans = document.getElementById('slipTransfer');
@@ -12354,7 +12354,7 @@ function syncCustomerDisplay(overrideStatus = null, calledQueueData = null) {
             if (selectedPayment === 'เงินสด') currentStatus = "cash_payment";
             else if (selectedPayment === 'โอนเงิน') currentStatus = "qr_payment";
             else if (selectedPayment === 'QR Code' || selectedPayment === 'QR') currentStatus = "qr_payment"; 
-            else if (selectedPayment === 'คนละครึ่ง') currentStatus = "half_payment";
+            else if (selectedPayment === 'โครงการรัฐร่วมจ่าย') currentStatus = "half_payment";
             else if (selectedPayment === 'เดลิเวอรี่') currentStatus = "delivery_payment";
         }
         // 🌟 2. เพิ่มเงื่อนไขให้ดักจับ customQRModal ด้วย
@@ -16116,7 +16116,7 @@ function calculateChange() {
         }
     } 
     // 🟢 เพิ่ม 'คิวอาร์โค้ด' เข้ามาในเงื่อนไขนี้ 🟢
-    else if (typeof selectedPayment !== 'undefined' && (selectedPayment === 'คนละครึ่ง' || selectedPayment === 'เดลิเวอรี่' || selectedPayment === 'คิวอาร์โค้ด')) { 
+    else if (typeof selectedPayment !== 'undefined' && (selectedPayment === 'โครงการรัฐร่วมจ่าย' || selectedPayment === 'เดลิเวอรี่' || selectedPayment === 'คิวอาร์โค้ด')) { 
         currentCash = grandTotal.toString();
         if(elCashInput) elCashInput.innerText = currentCash;
     }
