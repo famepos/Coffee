@@ -16323,39 +16323,47 @@ function calculateSplitMix() {
     let grandTotal = parseFloat(document.getElementById('modalGrandTotal').innerText.replace('฿', '')) || 0;
     let cashInput = parseFloat(document.getElementById('splitMixCashInput').value) || 0;
     
+    // คำนวณยอดส่วนต่างที่ต้องโอน
     let transferAmount = grandTotal - cashInput;
     if (transferAmount < 0) transferAmount = 0;
     
-    document.getElementById('splitMixTransferAmount').innerText = '฿' + transferAmount.toFixed(2);
-    
     let btnConfirm = document.getElementById('btnConfirmSplitMix');
     let qrContainer = document.getElementById('splitMixQRContainer');
+    let transferAmountDisplay = document.getElementById('splitMixTransferAmount');
     
-    let useCustomQR = globalStoreSettings && globalStoreSettings.enableCustomQR && globalStoreSettings.customQRUrl;
+    // ดึงเลขพร้อมเพย์
+    let promptPayID = typeof globalStoreSettings !== 'undefined' && globalStoreSettings.promptPay ? globalStoreSettings.promptPay.replace(/-/g, '') : "0000000000";
     let hasPromptPay = globalStoreSettings && globalStoreSettings.promptPay;
+
+    // อัปเดตตัวเลขยอดโอนที่หน้าจอ
+    if (transferAmountDisplay) {
+        transferAmountDisplay.innerText = "฿" + transferAmount.toFixed(2);
+    }
 
     if (cashInput > 0) {
         btnConfirm.disabled = false;
-        btnConfirm.className = "w-full py-4 mt-4 bg-pink-500 text-white rounded-xl font-bold text-lg hover:bg-pink-600 transition shadow-md";
+        btnConfirm.className = "w-full py-4 mt-2 bg-pink-500 text-white rounded-xl font-bold text-lg hover:bg-pink-600 transition shadow-md";
         btnConfirm.innerText = "✅ ยืนยันชำระเงิน";
         
-        // 🟢 [แก้ไขเพิ่ม Custom QR]
-        if (transferAmount > 0 && (useCustomQR || hasPromptPay)) {
+        // 🟢 บังคับใช้ PromptPay ขาว-ดำ เสมอสำหรับยอดส่วนต่างโอนเงิน
+        if (transferAmount > 0 && hasPromptPay) {
             qrContainer.classList.remove('hidden');
             qrContainer.classList.add('flex');
-            document.getElementById('splitMixQRImage').src = useCustomQR ? globalStoreSettings.customQRUrl : 'https://promptpay.io/' + globalStoreSettings.promptPay + '/' + transferAmount.toFixed(2) + '.png';
+            // สร้างลิงก์ QR ขาว-ดำ ใส่เข้าไป
+            document.getElementById('splitMixQRImage').src = 'https://promptpay.io/' + promptPayID + '/' + transferAmount.toFixed(2) + '.png';
         } else {
             qrContainer.classList.add('hidden');
             qrContainer.classList.remove('flex');
         }
     } else {
         btnConfirm.disabled = true;
-        btnConfirm.className = "w-full py-4 mt-4 bg-gray-300 text-gray-500 rounded-xl font-bold text-lg cursor-not-allowed transition shadow-md";
+        btnConfirm.className = "w-full py-4 mt-2 bg-gray-300 text-gray-500 rounded-xl font-bold text-lg cursor-not-allowed transition shadow-md";
         btnConfirm.innerText = "กรุณาระบุยอดเงินสด";
         qrContainer.classList.add('hidden');
         qrContainer.classList.remove('flex');
     }
 
+    // สั่งอัปเดตไปที่หน้าจอลูกค้า
     if (typeof syncCustomerDisplay === 'function') {
         syncCustomerDisplay('split_mix'); 
     }
@@ -16813,21 +16821,22 @@ function calculateSplitEqual() {
     let grandTotal = parseFloat(document.getElementById('modalGrandTotal').innerText.replace('฿', '')) || 0;
     let peopleCount = parseInt(document.getElementById('splitEqualPeopleInput').value) || 2;
     
-    document.getElementById('splitEqualGrandTotal').innerText = '฿' + grandTotal.toFixed(2);
-    
-    // คำนวณยอดต่อคน
+    // 1. คำนวณยอดต่อคน
     let perPerson = parseFloat((grandTotal / peopleCount).toFixed(2));
     
-    let useCustomQR = globalStoreSettings && globalStoreSettings.enableCustomQR && globalStoreSettings.customQRUrl;
+    // 2. ดึงเลขพร้อมเพย์ (ตัดขีดออก)
+    let promptPayID = typeof globalStoreSettings !== 'undefined' && globalStoreSettings.promptPay ? globalStoreSettings.promptPay.replace(/-/g, '') : "0000000000";
 
-    // 🟢 [แก้ไขเพิ่ม Custom QR] สร้าง QR Code กลาง (ใช้ยอดต่อคน)
-    if (useCustomQR || (globalStoreSettings && globalStoreSettings.promptPay)) {
+    // 3. แสดงผลหน้าจอ และ บังคับใช้ PromptPay ขาว-ดำ เสมอ (ลบเงื่อนไขเช็กรูป Custom QR ออกไปเลย)
+    if (globalStoreSettings && globalStoreSettings.promptPay) {
         document.getElementById('splitEqualQRContainer').classList.remove('hidden');
         document.getElementById('splitEqualPerPersonDisp').innerText = perPerson.toFixed(2);
-        document.getElementById('splitEqualQRImage').src = useCustomQR ? globalStoreSettings.customQRUrl : 'https://promptpay.io/' + globalStoreSettings.promptPay + '/' + perPerson.toFixed(2) + '.png';
+        
+        // บังคับลิงก์สร้าง QR ขาว-ดำ
+        document.getElementById('splitEqualQRImage').src = 'https://promptpay.io/' + promptPayID + '/' + perPerson.toFixed(2) + '.png';
     }
 
-    // วาดตารางรับเงินแต่ละคน
+    // 4. วาดตารางรับเงินแต่ละคน
     renderSplitPersonsUI(peopleCount, grandTotal);
 }
 
