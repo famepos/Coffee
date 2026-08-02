@@ -15972,9 +15972,11 @@ let isEligible = false;
                 isEligible = true;
             }
         } 
-        // 🎯 4. โปรโมชั่น: วันเกิด (เฉพาะสมาชิกทุกคน ยกเว้นลูกค้าทั่วไป)
+// 🎯 4. โปรโมชั่น: วันเกิด (ให้กับสมาชิกทุกคนที่มีข้อมูลวันเกิดในระบบ)
         else if (promo.memberOnly === 'birthday' || promo.memberOnly === '🎂 เฉพาะลูกค้าเดือนเกิด') {
-            if (tierName !== "ลูกค้าทั่วไป" && activeCustomer && activeCustomer.birthday && activeCustomer.birthday !== "-") {
+            
+            // 👇 ลบเงื่อนไข tierName !== "ลูกค้าทั่วไป" ออกไปเลยครับ
+            if (activeCustomer && activeCustomer.birthday && activeCustomer.birthday !== "-") {
                 let currentMonth = today.getMonth() + 1;
                 let birthMonth = 0;
                 let bdayRaw = activeCustomer.birthday.toString().replace(/'/g, '').trim();
@@ -15990,7 +15992,7 @@ let isEligible = false;
                 
                 // ตรวจสอบเดือนเกิด
                 if (birthMonth === currentMonth) {
-                    isEligible = true;
+                    isEligible = true; // ✅ ลูกค้าเกิดเดือนนี้ ให้สิทธิ์ผ่านทันที!
                 }
             }
         }
