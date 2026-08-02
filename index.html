@@ -5268,42 +5268,48 @@ const google = {
             let successCb = null;
             let failureCb = null;
             
-            const proxy = new Proxy({}, {
+            return new Proxy({}, {
                 get: function(target, prop) {
                     if (prop === 'withSuccessHandler') {
-                        return function(cb) { successCb = cb; return proxy; };
+                        return function(cb) { successCb = cb; return target; };
                     }
                     if (prop === 'withFailureHandler') {
-                        return function(cb) { failureCb = cb; return proxy; };
+                        return function(cb) { failureCb = cb; return target; };
                     }
                     return function(...args) {
-                        // ⚡ เพิ่ม Header และ redirect เพื่อป้องกันการโดนบล็อก
                         fetch(API_URL, {
                             method: "POST",
                             headers: { "Content-Type": "text/plain;charset=utf-8" },
                             body: JSON.stringify({ action: prop, args: args }),
                             redirect: "follow"
                         })
-                        .then(res => res.json())
-                        .then(data => {
-                            if(data.status === "Success" && successCb) {
-                                successCb(data.result);
-                            } else if (data.status !== "Success" && failureCb) {
-                                failureCb(data.message);
+                        .then(res => res.text()) // 🛡️ อ่านเป็น Text ก่อน ป้องกันพังเวลา Google พ่น HTML Error
+                        .then(text => {
+                            try {
+                                let data = JSON.parse(text);
+                                if(data.status === "Success" && successCb) {
+                                    successCb(data.result);
+                                } else {
+                                    if(failureCb) failureCb(data.message || "Unknown Server Error");
+                                    else console.error("Server Error:", data.message);
+                                }
+                            } catch(e) {
+                                // ถ้า Google พ่น HTML Error ออกมา จะแสดงรายละเอียดใน Console ให้เห็นชัดเจน
+                                console.error("Apps Script HTML Error Response:", text);
+                                if(failureCb) failureCb("Apps Script Error (Invalid JSON response)");
                             }
                         })
                         .catch(err => {
-                            if(failureCb) failureCb(err);
-                            else console.error("Fetch Error:", err);
+                            if(failureCb) failureCb(err.message);
+                            else console.error("Fetch Network Error:", err);
                         });
                     };
                 }
             });
-            return proxy;
         }
     }
 };
-
+    
 let cart = [];
     let currentCash = "0";
     let selectedPayment = "เงินสด";
