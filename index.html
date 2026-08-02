@@ -5260,7 +5260,7 @@ window.currentBranch = "<?= currentBranch ?>";
         const API_URL = "https://script.google.com/macros/s/AKfycbwHmG_j6fmCAo9AsqWWhwLZ7mGHOeUn7fUAbcZ8a8REopMo0jGoIo_ymhzcSP0eqA_UXg/exec";
 
 // ================================================================
-// 🧙‍♂️ MAGIC PROXY (V2): ทะลวงบล็อก CORS ให้ใช้งานบน GitHub ได้ 100%
+// 🧙‍♂️ MAGIC PROXY (V3): แก้ไขปัญหา Chaining หาย และดักจับ Error สมบูรณ์แบบ
 // ================================================================
 const google = {
     script: {
@@ -5268,14 +5268,22 @@ const google = {
             let successCb = null;
             let failureCb = null;
             
-            return new Proxy({}, {
+            const proxyInstance = new Proxy({}, {
                 get: function(target, prop) {
                     if (prop === 'withSuccessHandler') {
-                        return function(cb) { successCb = cb; return target; };
+                        return function(cb) {
+                            successCb = cb;
+                            return proxyInstance; // คืนค่าตัว Proxy กลับไปเพื่อให้เชื่อมต่อคำสั่งต่อไปได้
+                        };
                     }
                     if (prop === 'withFailureHandler') {
-                        return function(cb) { failureCb = cb; return target; };
+                        return function(cb) {
+                            failureCb = cb;
+                            return proxyInstance; // คืนค่าตัว Proxy กลับไปเพื่อให้เชื่อมต่อคำสั่งต่อไปได้
+                        };
                     }
+                    
+                    // สำหรับฟังก์ชันเรียกใช้งานหลังบ้าน เช่น getStoreSettings, getProducts ฯลฯ
                     return function(...args) {
                         fetch(API_URL, {
                             method: "POST",
@@ -5283,18 +5291,18 @@ const google = {
                             body: JSON.stringify({ action: prop, args: args }),
                             redirect: "follow"
                         })
-                        .then(res => res.text()) // 🛡️ อ่านเป็น Text ก่อน ป้องกันพังเวลา Google พ่น HTML Error
+                        .then(res => res.text()) // อ่านเป็น Text ป้องกันหน้าพังเวลา Apps Script พ่น HTML Error
                         .then(text => {
                             try {
                                 let data = JSON.parse(text);
                                 if(data.status === "Success" && successCb) {
                                     successCb(data.result);
                                 } else {
-                                    if(failureCb) failureCb(data.message || "Unknown Server Error");
-                                    else console.error("Server Error:", data.message);
+                                    let errorMsg = data.message || "Unknown Server Error";
+                                    if(failureCb) failureCb(errorMsg);
+                                    else console.error("Server Error:", errorMsg);
                                 }
                             } catch(e) {
-                                // ถ้า Google พ่น HTML Error ออกมา จะแสดงรายละเอียดใน Console ให้เห็นชัดเจน
                                 console.error("Apps Script HTML Error Response:", text);
                                 if(failureCb) failureCb("Apps Script Error (Invalid JSON response)");
                             }
@@ -5306,6 +5314,8 @@ const google = {
                     };
                 }
             });
+            
+            return proxyInstance;
         }
     }
 };
@@ -12487,8 +12497,12 @@ let pp = typeof globalStoreSettings !== 'undefined' ? globalStoreSettings.prompt
             displayData.promptPayUrl = `https://promptpay.io/${pp}/${displayData.splitPerPerson}.png`;
         }
 
-        if(typeof google !== 'undefined' && google.script && google.script.run) {
-            google.script.run.updateCDSStateGS(JSON.stringify(displayData));
+  if(typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run
+                .withFailureHandler(function(err) {
+                    console.warn("CDS Cloud Sync skipped due to size limit:", err);
+                })
+                .updateCDSStateGS(JSON.stringify(displayData));
         }
         localStorage.setItem('famepos_customer_display', JSON.stringify(displayData));
     } catch(e) { console.error("Sync Error:", e); }
