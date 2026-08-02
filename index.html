@@ -12497,13 +12497,7 @@ let pp = typeof globalStoreSettings !== 'undefined' ? globalStoreSettings.prompt
             displayData.promptPayUrl = `https://promptpay.io/${pp}/${displayData.splitPerPerson}.png`;
         }
 
-  if(typeof google !== 'undefined' && google.script && google.script.run) {
-            google.script.run
-                .withFailureHandler(function(err) {
-                    console.warn("CDS Cloud Sync skipped due to size limit:", err);
-                })
-                .updateCDSStateGS(JSON.stringify(displayData));
-        }
+
         localStorage.setItem('famepos_customer_display', JSON.stringify(displayData));
     } catch(e) { console.error("Sync Error:", e); }
 }
