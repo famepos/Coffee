@@ -83,13 +83,20 @@
         });
 
         // ดึงข้อมูลจากแคชเชียร์ทุกๆ 0.5 วินาที
-        setInterval(() => {
-            document.getElementById('lblDateTime').innerText = new Date().toLocaleTimeString('th-TH');
-            fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "getCDSStateGS", storeId: STORE_ID }) })
-            .then(res => res.json()).then(data => {
-                if(data.status === "Success" && data.result) updateUI(JSON.parse(data.result));
-            });
-        }, 500); 
+ // ดึงข้อมูลสถานะจาก localStorage ของเบราว์เซอร์ทุกๆ 0.3 วินาที (เร็ว แรง และไม่ติด Error)
+setInterval(() => {
+    document.getElementById('lblDateTime').innerText = new Date().toLocaleTimeString('th-TH');
+    
+    try {
+        let rawState = localStorage.getItem('famepos_customer_display');
+        if (rawState) {
+            let stateData = JSON.parse(rawState);
+            updateUI(stateData);
+        }
+    } catch (e) {
+        console.error("Read Display State Error:", e);
+    }
+}, 300);
 
         // 🌟 ฟังก์ชันเล่นสไลด์โฆษณา
         function playNextAd() {
