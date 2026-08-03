@@ -393,7 +393,60 @@ select option:checked {
 <body class="w-full flex overflow-hidden text-gray-800 bg-gray-100">  
 <div id="toastContainer" class="fixed top-5 right-5 z-[10000] flex flex-col gap-3 pointer-events-none w-80"></div>
 
-<?!= include('StaffLogin'); ?>
+<!-- ================= หน้าจอ: เข้าสู่ระบบ (พนักงาน) ================= -->
+<div id="loginOverlay" class="fixed inset-0 bg-gradient-to-br from-pink-50 via-white to-pink-100 flex flex-col items-center justify-center z-[1050] p-4">
+  <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-pink-100 flex flex-col items-center text-center">
+    <img src="https://i.postimg.cc/7h052Ffb/daa42c0e-2ccf-455e-9d46-491a67539e44.png" class="w-24 h-24 object-contain mb-4 drop-shadow-md">
+    <h2 class="text-3xl font-bold text-gray-800">FamePOS</h2>
+    <p class="text-gray-500 text-sm mt-1 mb-8">ระบบจัดการร้านค้า ยินดีให้บริการ</p>
+    
+    <div class="space-y-5 w-full text-left">
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1.5">ชื่อพนักงาน หรือ เบอร์โทรศัพท์</label>
+        <input type="text" id="loginUsername" class="w-full p-3.5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition font-medium" placeholder="กรอกชื่อพนักงาน">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1.5">รหัสผ่าน (PIN)</label>
+        <input type="password" id="loginPassword" class="w-full p-3.5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-center tracking-widest text-2xl font-bold transition" placeholder="••••">
+      </div>
+ <!-- ปุ่มเข้าสู่ระบบเดิม (ไม่ต้องก๊อปปี้ไป ให้หาจุดนี้เพื่อใช้อ้างอิง) -->
+      <button onclick="processLogin()" id="btnLoginSubmit" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold p-4 rounded-2xl transition duration-200 shadow-md flex items-center justify-center space-x-2 text-lg mt-2">
+        <span>🚀 เข้าสู่ระบบร้านค้า</span>
+      </button>
+
+      <!-- 👇 ก๊อปปี้ปุ่มนี้ไปวางต่อท้ายปุ่มด้านบนได้เลย 👇 -->
+      <div class="relative flex items-center py-2">
+          <div class="flex-grow border-t border-gray-200"></div>
+          <span class="flex-shrink-0 mx-4 text-gray-400 text-sm">หรือ</span>
+          <div class="flex-grow border-t border-gray-200"></div>
+      </div>
+      
+ <!-- ลบปุ่มเดิมทิ้ง แล้วเอาปุ่มนี้ไปวางแทนครับ -->
+<button onclick="promptRegisterUser()" class="w-full bg-white border-2 border-pink-500 text-pink-600 hover:bg-pink-50 font-bold p-4 rounded-2xl transition duration-200 shadow-sm flex items-center justify-center space-x-2 text-lg mt-2">
+  <span>✨ สมัครใช้งานระบบ</span>
+</button>
+      <!-- 👆 สิ้นสุดส่วนที่ต้องเพิ่ม 👆 -->
+    </div>
+  </div>
+  <span class="text-gray-400 text-xs mt-6">Powered by FamePOS</span>
+</div>
+
+<!-- ================= หน้าจอ: ต้อนรับหลังรีเซ็ตระบบ ================= -->
+<div id="factoryWelcomeView" class="hidden fixed inset-0 bg-pink-50 z-[999] flex flex-col items-center justify-center text-center p-6 animate-fade-in">
+    <div class="bg-white p-12 rounded-[2.5rem] shadow-2xl border border-pink-100 flex flex-col items-center max-w-sm w-full">
+        <img src="https://i.postimg.cc/7h052Ffb/daa42c0e-2ccf-455e-9d46-491a67539e44.png" class="w-32 h-32 object-contain mb-4 drop-shadow-md">
+        <h2 class="text-3xl font-bold text-pink-800 mb-1">FamePOS</h2>
+        <p class="text-pink-600 font-bold text-sm mb-6">ระบบจัดการร้านค้าสำเร็จรูป</p>
+        
+        <div class="bg-pink-50 text-pink-800 text-xs p-4 rounded-xl border border-pink-100 mb-6 font-medium leading-relaxed">
+            ✨ รีเซ็ตระบบกลับค่าโรงงานสำเร็จเรียบร้อยแล้ว<br>ฐานข้อมูลทุกชีทถูกทำความสะอาดพร้อมใช้งานใหม่
+        </div>
+        
+        <button onclick="localStorage.removeItem('famepos_user'); window.currentUser = null; window.currentRole = null; window.currentBranch = null; if(typeof loadBranchesData === 'function') loadBranchesData(); document.getElementById('userStatusContainer').innerHTML = ''; document.getElementById('loginUsername').value = ''; document.getElementById('loginPassword').value = ''; document.getElementById('loginOverlay').classList.remove('hidden'); document.getElementById('factoryWelcomeView').classList.add('hidden');" class="w-full py-3.5 bg-pink-500 text-white font-bold rounded-xl text-lg hover:bg-pink-600 transition shadow-md active:scale-95 transform">
+            🚀 เริ่มต้นใช้งานระบบอีกครั้ง
+        </button>
+    </div>
+</div>
 
 <!-- ปุ่ม 3 ขีด สำหรับเปิดเมนู (แสดงเฉพาะบนมือถือ) -->
 <button onclick="toggleSidebar()" class="md:hidden fixed top-4 left-2 z-[100] bg-white p-2 rounded-xl shadow-md text-pink-600 border border-pink-100 flex items-center justify-center">
@@ -5239,9 +5292,8 @@ class="hidden bg-white p-6 rounded-2xl border border-purple-100 shadow-sm flex-1
 </div>
   <script>
 
-window.currentBranch = "<?= currentBranch ?>";
-    window.currentStoreId = "<?= currentStoreId ?>";
-
+window.currentBranch = localStorage.getItem('currentBranch') || "สาขาหลัก";
+window.currentStoreId = localStorage.getItem('currentStoreId') || "";
 
 // 1. ใส่ลิงก์หลังบ้านของคุณเฟรมไว้บนสุด
         const API_URL = "https://script.google.com/macros/s/AKfycbwHmG_j6fmCAo9AsqWWhwLZ7mGHOeUn7fUAbcZ8a8REopMo0jGoIo_ymhzcSP0eqA_UXg/exec";
@@ -17578,6 +17630,231 @@ function previewCustomQR(event) {
     }
 }
 
+
+  window.currentUser = null;
+  window.currentRole = null;
+  window.currentBranch = null;
+
+  function processLogin() {
+    let user = document.getElementById('loginUsername').value.trim();
+    let pass = document.getElementById('loginPassword').value.trim(); 
+    
+    if (!user || !pass) { 
+      showToast("กรุณากรอกชื่อผู้ใช้/เบอร์โทรศัพท์ และรหัสผ่านให้ครบถ้วน", "error"); 
+      return; 
+    }
+    
+    let btn = document.getElementById('btnLoginSubmit'); 
+    if (btn) {
+      btn.innerHTML = `<span>⏳ กำลังตรวจสอบข้อมูล...</span>`; 
+      btn.disabled = true; 
+    }
+    
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (btn) {
+          btn.innerHTML = `<span>🚀 เข้าสู่ระบบร้านค้า</span>`; 
+          btn.disabled = false; 
+        }
+        
+        if (res && res.status === "Success") { 
+          window.currentUser = res.name; 
+          window.currentRole = res.role; 
+          window.currentBranch = res.branch; 
+          
+          localStorage.setItem('famepos_user', JSON.stringify(res)); 
+          showToast(`ยินดีต้อนรับคุณ ${res.name}`, "success");
+          
+          let loginOverlay = document.getElementById('loginOverlay'); 
+          if (loginOverlay) loginOverlay.classList.add('hidden'); 
+          
+          showView('sales');
+          updateUserStatusUI(); 
+          applyRolePermissions(); 
+          loadProducts(); 
+          loadShiftHistory(); 
+          renderStoreDropdown(); 
+          
+        } else {
+          let errorMsg = (res && res.message) ? res.message : "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"; 
+          showToast(errorMsg, "error"); 
+        }
+      })
+      .withFailureHandler(function(err) {
+        if (btn) {
+          btn.innerHTML = `<span>🚀 เข้าสู่ระบบร้านค้า</span>`; 
+          btn.disabled = false; 
+        }
+        showToast("ระบบขัดข้อง: " + err.message, "error"); 
+      })
+      .checkLoginGS(user, pass); 
+  }
+
+  function processLogout() {
+    Swal.fire({
+      title: '🚪 ยืนยันออกจากระบบ',
+      text: "คุณต้องการออกจากระบบใช่หรือไม่?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#f43f5e',
+      cancelButtonColor: '#9ca3af',  
+      confirmButtonText: 'ตกลง, ออกจากระบบ',
+      cancelButtonText: 'ยกเลิก',
+      background: '#ffffff',
+      customClass: { popup: 'rounded-[2rem]' }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.currentUser = null;
+        window.currentRole = null;
+        window.currentBranch = null;
+        
+        localStorage.removeItem('famepos_user');
+        
+        cart = [];
+        if (typeof syncCustomerDisplay === 'function') {
+            syncCustomerDisplay('idle');
+        }
+        
+        let statusBox = document.getElementById('userStatusContainer');
+        if (statusBox) statusBox.innerHTML = '';
+        
+        document.getElementById('loginUsername').value = "";
+        document.getElementById('loginPassword').value = "";
+        document.getElementById('loginOverlay').classList.remove('hidden'); 
+        
+        showToast("ออกจากระบบเรียบร้อยแล้ว", "success");
+      }
+    });
+  }
+
+  function promptRegisterUser() {
+  // 🛡️ เช็คก่อนว่า SweetAlert โหลดมาติดไหม
+  if (typeof Swal === 'undefined') {
+      alert("❌ ระบบโหลดกล่องข้อความ (SweetAlert2) ไม่สำเร็จ กรุณาตรวจสอบโค้ดในส่วน <head> ของไฟล์ Index.html ครับ");
+      return;
+  }
+
+  Swal.fire({
+    title: '✨ สร้างร้านค้าใหม่',
+    html: `
+      <div class="space-y-4 text-left px-2 mt-4">
+        <!-- 🌟 เพิ่มช่องกรอกชื่อร้านค้าตรงนี้ -->
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">ชื่อร้านค้า <span class="text-red-500">*</span></label>
+          <input type="text" id="regStoreName" class="w-full p-3 border-2 border-pink-100 rounded-xl focus:border-pink-500 outline-none font-bold text-pink-600" placeholder="เช่น ร้านกาแฟคุณ A">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">ชื่อ-นามสกุล เจ้าของร้าน <span class="text-red-500">*</span></label>
+          <input type="text" id="regName" class="w-full p-3 border-2 border-pink-100 rounded-xl focus:border-pink-500 outline-none" placeholder="เช่น สมชาย ใจดี">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">เบอร์โทรศัพท์ (ใช้เข้าระบบ) <span class="text-red-500">*</span></label>
+          <input type="text" id="regUsername" class="w-full p-3 border-2 border-pink-100 rounded-xl focus:border-pink-500 outline-none" placeholder="08X-XXX-XXXX">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">รหัสผ่าน (PIN) <span class="text-red-500">*</span></label>
+          <input type="password" id="regPassword" class="w-full p-3 border-2 border-pink-100 rounded-xl focus:border-pink-500 outline-none text-center tracking-widest text-lg font-bold" placeholder="••••">
+        </div>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '📝 ยืนยันการสร้างร้าน',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#db2777', 
+    cancelButtonColor: '#9ca3af',
+    customClass: { popup: 'rounded-[2rem] shadow-2xl', confirmButton: 'rounded-xl', cancelButton: 'rounded-xl' },
+    preConfirm: () => {
+      // 🌟 ดึงข้อมูลชื่อร้านค้าเพิ่มเข้ามา
+      const storeName = document.getElementById('regStoreName').value.trim();
+      const name = document.getElementById('regName').value.trim();
+      const username = document.getElementById('regUsername').value.trim();
+      const password = document.getElementById('regPassword').value.trim();
+      
+      // 🌟 เช็คว่ากรอกครบทั้ง 4 ช่องไหม
+      if (!storeName || !name || !username || !password) {
+        Swal.showValidationMessage('กรุณากรอกข้อมูลให้ครบถ้วนทุกช่องครับ!');
+        return false;
+      }
+      // 🌟 ส่งข้อมูลชื่อร้านค้า (storeName) พ่วงไปให้หลังบ้านด้วย
+      return { storeName: storeName, name: name, username: username, password: password };
+    }
+  }).then((result) => {
+ if (result.isConfirmed) {
+      // 🌟 เปลี่ยนกล่องโหลดดิ้งให้เป็นสไตล์ FamePOS (ธีมสีชมพู)
+      Swal.fire({
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        customClass: { popup: 'rounded-[2rem] p-8' },
+        html: `
+          <div class="flex flex-col items-center justify-center space-y-5">
+            <!-- วงกลม Spinner สีชมพู -->
+            <div class="animate-spin rounded-full h-16 w-16 border-4 border-pink-100 border-t-pink-500"></div>
+            
+            <!-- ข้อความ -->
+            <div>
+              <h3 class="text-xl font-bold text-gray-800 mb-1">กำลังสร้างฐานข้อมูลร้านใหม่...</h3>
+              <p class="text-sm text-gray-500">อาจใช้เวลา 10-15 วินาที กรุณารอสักครู่</p>
+            </div>
+          </div>
+        `
+      });
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res && res.status === "Success") {
+            Swal.fire({
+              title: '🎉 สร้างร้านสำเร็จ!',
+              text: 'ระบบได้สร้างฐานข้อมูลสำหรับร้าน "' + result.value.storeName + '" เรียบร้อยแล้ว',
+              icon: 'success',
+              confirmButtonColor: '#db2777',
+              customClass: { popup: 'rounded-[2rem]', confirmButton: 'rounded-xl' }
+            }).then(() => {
+              document.getElementById('loginUsername').value = result.value.username;
+              document.getElementById('loginPassword').value = '';
+            });
+          } else {
+            Swal.fire({
+              title: '❌ สร้างร้านไม่สำเร็จ', 
+              text: res.message || 'เบอร์โทรนี้อาจถูกใช้เปิดร้านไปแล้ว', 
+              icon: 'error',
+              customClass: { popup: 'rounded-[2rem]', confirmButton: 'rounded-xl' }
+            });
+          }
+        })
+        .withFailureHandler(function(err) {
+          Swal.fire('❌ ระบบขัดข้อง', err.message, 'error');
+        })
+        .registerNewUserGS(result.value); 
+    }
+  });
+}
+
+// 🟢 เพิ่มฟังก์ชันเช็กความจำการล็อกอินเมื่อเปิดหน้าเว็บขึ้นมา
+function checkAutoLogin() {
+  let savedUser = localStorage.getItem('famepos_user');
+  if (savedUser) {
+    try {
+      let res = JSON.parse(savedUser);
+      window.currentUser = res.name;
+      window.currentRole = res.role;
+      window.currentBranch = res.branch;
+
+      let loginOverlay = document.getElementById('loginOverlay');
+      if (loginOverlay) loginOverlay.classList.add('hidden');
+
+      showView('sales');
+      updateUserStatusUI();
+      applyRolePermissions();
+      loadProducts();
+      loadShiftHistory();
+      renderStoreDropdown();
+    } catch (e) {
+      console.error("Auto login error:", e);
+    }
+  }
+}
+
+// สั่งให้ทำงานทันทีที่โหลดหน้าเว็บเสร็จ
+window.addEventListener('DOMContentLoaded', checkAutoLogin);
 // ==========================================
 // ใส่คำสั่งโหลดแคชออปชันเผื่อไว้ตอนเปิดเบราว์เซอร์ครั้งแรก
 // ==========================================
