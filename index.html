@@ -12498,7 +12498,58 @@ let pp = typeof globalStoreSettings !== 'undefined' ? globalStoreSettings.prompt
         }
 
 
+// 1. บันทึกในเครื่องตัวเอง (กรณีเปิดจอคู่บนคอมเครื่องเดียวกัน)
         localStorage.setItem('famepos_customer_display', JSON.stringify(displayData));
+
+        // 🌟 2. ส่งขึ้น Cloud แบบ "ขนาดเบา" (ตัดรูปภาพออก) เพื่อให้ซิงค์ข้ามเครื่องไปทีวี/แท็บเล็ตได้โดยไม่ติด Error
+        try {
+            let lightWeightData = {
+                status: displayData.status,
+                cart: displayData.cart.map(item => ({
+                    name: item.name,
+                    qty: item.qty,
+                    price: item.price,
+                    total: item.total
+                    // ตัด item.image ออก เพื่อให้ไฟล์มีขนาดเล็กจิ๋ว ไม่เกินลิมิตของ Google
+                })),
+                govPercent: displayData.govPercent,
+                govMax: displayData.govMax,
+                subTotal: displayData.subTotal,
+                grandTotal: displayData.grandTotal,
+                vat: displayData.vat,
+                serviceCharge: displayData.serviceCharge,
+                taxLabel: displayData.taxLabel,
+                serviceLabel: displayData.serviceLabel,
+                tableNo: displayData.tableNo,
+                orderType: displayData.orderType,
+                promptPay: displayData.promptPay,
+                promptPayUrl: displayData.promptPayUrl || "",
+                customQrUrl: displayData.customQrUrl || "",
+                deliveryAppText: displayData.deliveryAppText,
+                deliveryOrderId: displayData.deliveryOrderId,
+                cashReceived: displayData.cashReceived,
+                changeAmount: displayData.changeAmount,
+                qrTimerText: displayData.qrTimerText,
+                splitPerPerson: displayData.splitPerPerson || "0.00",
+                splitPeopleCount: displayData.splitPeopleCount || 0,
+                splitPersons: displayData.splitPersons || [],
+                splitMixCash: displayData.splitMixCash || 0,
+                splitMixTransfer: displayData.splitMixTransfer || 0,
+                splitMixChange: displayData.splitMixChange || 0,
+                timestamp: displayData.timestamp
+            };
+
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withFailureHandler(function(err) {
+                        console.warn("Cloud Sync Warning:", err);
+                    })
+                    .updateCDSStateGS(JSON.stringify(lightWeightData));
+            }
+        } catch (cloudErr) {
+            console.error("Lightweight Sync Error:", cloudErr);
+        }
+
     } catch(e) { console.error("Sync Error:", e); }
 }
 // ============================================
