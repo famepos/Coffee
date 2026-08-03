@@ -5242,6 +5242,7 @@ class="hidden bg-white p-6 rounded-2xl border border-purple-100 shadow-sm flex-1
 window.currentBranch = "<?= currentBranch ?>";
     window.currentStoreId = "<?= currentStoreId ?>";
 
+
 // 1. ใส่ลิงก์หลังบ้านของคุณเฟรมไว้บนสุด
         const API_URL = "https://script.google.com/macros/s/AKfycbwHmG_j6fmCAo9AsqWWhwLZ7mGHOeUn7fUAbcZ8a8REopMo0jGoIo_ymhzcSP0eqA_UXg/exec";
 
@@ -5289,6 +5290,7 @@ const google = {
         }
     }
 };
+
 
 let cart = [];
     let currentCash = "0";
@@ -15858,7 +15860,7 @@ function loadActivePromotions() {
 // สั่งให้โหลดโปรโมชั่นทันทีที่เข้าเว็บ
 window.addEventListener('DOMContentLoaded', loadActivePromotions);
 
-// 5. สมองกลคำนวณโปรโมชั่น (รองรับเดือนเกิดแบบถึกทน)
+// 5. สมองกลคำนวณโปรโมชั่น (บังคับใช้ได้แค่โปรเดียว - เลือกอันที่ลดมากที่สุด)
 function calculateAutoPromotions() {
     autoPromoDiscountTotal = 0;
     activePromotionsIds = [];
@@ -15873,17 +15875,13 @@ function calculateAutoPromotions() {
     let subTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
     let phoneInput = document.getElementById('customerPhone');
     let cleanPhone = phoneInput ? phoneInput.value.trim().replace(/[^0-9]/g, '') : "";
-    let currentCustomerLevel = 'all'; 
     
     let activeCustomer = window.currentMember; 
-    
-    if (activeCustomer) {
-        let mType = activeCustomer.type ? activeCustomer.type.toString().toUpperCase().trim() : "";
-        currentCustomerLevel = (mType === 'VIP') ? 'vip' : 'member'; 
-    }
-
     let today = new Date(); 
     today.setHours(0,0,0,0);
+
+    // สร้างตัวแปรเก็บโปรโมชั่นทั้งหมดที่ลูกค้ามีสิทธิ์ใช้ในบิลนี้
+    let eligiblePromosFound = [];
 
     globalPromotionsList.forEach(promo => {
         if (promo.status !== 'Active' && promo.status !== '🟢 เปิดใช้งาน') return; 
@@ -15897,39 +15895,34 @@ function calculateAutoPromotions() {
             if (today > end) return; 
         }
 
-let isEligible = false;
-        
-        // 1. ดึงชื่อระดับของลูกค้าออกมา ถ้าไม่มีข้อมูลให้ถือว่าเป็น "ลูกค้าทั่วไป"
+        let isEligible = false;
         let tierName = (activeCustomer && activeCustomer.type) ? activeCustomer.type.toString().toUpperCase() : "ลูกค้าทั่วไป";
             
-        // 🎯 1. โปรโมชั่น: ลูกค้าทั่วไป (ไม่รวมสมาชิกใดๆ)
+        // 1. ลูกค้าทั่วไป
         if (promo.memberOnly === 'all' || promo.memberOnly === 'ทุกคน (รวมลูกค้าทั่วไป)') {
             if (tierName === "ลูกค้าทั่วไป" || tierName === "") {
                 isEligible = true;
             }
         } 
-        // 🎯 2. โปรโมชั่น: สมาชิกในระบบ (เฉพาะ Gold, Silver, Bronze)
+        // 2. สมาชิกในระบบ (Gold, Silver, Bronze)
         else if (promo.memberOnly === 'member' || promo.memberOnly === 'เฉพาะสมาชิกในระบบ') {
             if (tierName.includes('GOLD') || tierName.includes('SILVER') || tierName.includes('BRONZE')) {
                 isEligible = true;
             }
         } 
-        // 🎯 3. โปรโมชั่น: สมาชิกระดับ VIP (เฉพาะ Platinum เท่านั้น)
+        // 3. สมาชิกระดับ VIP (Platinum)
         else if (promo.memberOnly === 'vip' || promo.memberOnly === 'เฉพาะสมาชิกระดับ VIP') {
             if (tierName.includes('PLATINUM')) {
                 isEligible = true;
             }
         } 
-// 🎯 4. โปรโมชั่น: วันเกิด (ให้กับสมาชิกทุกคนที่มีข้อมูลวันเกิดในระบบ)
+        // 4. วันเกิด (เฉพาะสมาชิกที่มีวันเกิดตรงกับเดือนปัจจุบัน)
         else if (promo.memberOnly === 'birthday' || promo.memberOnly === '🎂 เฉพาะลูกค้าเดือนเกิด') {
-            
-            // 👇 ลบเงื่อนไข tierName !== "ลูกค้าทั่วไป" ออกไปเลยครับ
             if (activeCustomer && activeCustomer.birthday && activeCustomer.birthday !== "-") {
                 let currentMonth = today.getMonth() + 1;
                 let birthMonth = 0;
                 let bdayRaw = activeCustomer.birthday.toString().replace(/'/g, '').trim();
                 
-                // คำนวณเดือนเกิด
                 if (bdayRaw.includes('/')) {
                     let parts = bdayRaw.split('/');
                     if (parts.length >= 2) birthMonth = parseInt(parts[1], 10);
@@ -15938,14 +15931,12 @@ let isEligible = false;
                     if (parts.length >= 2) birthMonth = parseInt(parts[1], 10);
                 }
                 
-                // ตรวจสอบเดือนเกิด
                 if (birthMonth === currentMonth) {
-                    isEligible = true; // ✅ ลูกค้าเกิดเดือนนี้ ให้สิทธิ์ผ่านทันที!
+                    isEligible = true;
                 }
             }
         }
 
-        // ถ้ายกเว้นจากเงื่อนไขทั้งหมดด้านบน ให้ข้ามโปรโมชั่นนี้ไปเลย (ไม่ให้ใช้)
         if (!isEligible) return;
 
         let usageLimit = parseInt(promo.usageLimit) || 0;
@@ -16012,13 +16003,27 @@ let isEligible = false;
             }
         }
 
+        // ถ้าโปรนี้คำนวณส่วนลดได้มากกว่า 0 ให้เก็บใส่ก้อนเตรียมคัดเลือก
         if (discountForThisPromo > 0) {
-            autoPromoDiscountTotal += discountForThisPromo;
-            activePromotionsApplied.push(promo.promoName);
-            activePromotionsIds.push(promo.promoId); 
-            appliedPromoNames.push(promo.promoName);
+            eligiblePromosFound.push({
+                id: promo.promoId,
+                name: promo.promoName,
+                discount: discountForThisPromo
+            });
         }
     });
+
+    // 🎯 กฎเหล็ก: เลือกใช้โปรโมชั่นที่ให้ส่วนลด "สูงสุด" เพียงโปรเดียวเท่านั้น
+    if (eligiblePromosFound.length > 0) {
+        // เรียงลำดับจากส่วนลดมากไปหาน้อย
+        eligiblePromosFound.sort((a, b) => b.discount - a.discount);
+        let bestPromo = eligiblePromosFound[0]; // หยิบอันที่ลดเยอะที่สุดมาใช้
+
+        autoPromoDiscountTotal = bestPromo.discount;
+        activePromotionsApplied.push(bestPromo.name);
+        activePromotionsIds.push(bestPromo.id); 
+        appliedPromoNames.push(bestPromo.name);
+    }
 
     updatePromoUI(appliedPromoNames);
 }
