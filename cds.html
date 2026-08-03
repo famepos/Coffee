@@ -82,15 +82,24 @@
             }
         });
 
-        // ดึงข้อมูลจากแคชเชียร์ทุกๆ 0.5 วินาที
- // ดึงข้อมูลสถานะจาก localStorage ของเบราว์เซอร์ทุกๆ 0.3 วินาที (เร็ว แรง และไม่ติด Error)
+// 🌟 ดึงข้อมูลจากแคชเชียร์ทุกๆ 2 วินาที (ปลอดภัยต่อเซิร์ฟเวอร์ Google)
 setInterval(() => {
     document.getElementById('lblDateTime').innerText = new Date().toLocaleTimeString('th-TH');
-    fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "getCDSStateGS", storeId: STORE_ID }) })
-    .then(res => res.json()).then(data => {
-        if(data.status === "Success" && data.result) updateUI(JSON.parse(data.result));
+    
+    fetch(API_URL, { 
+        method: "POST", 
+        body: JSON.stringify({ action: "getCDSStateGS", storeId: STORE_ID }) 
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === "Success" && data.result) {
+            updateUI(JSON.parse(data.result));
+        }
+    })
+    .catch(err => {
+        console.warn("ไม่สามารถดึงข้อมูลจาก Cloud ได้ในรอบนี้ (รอรอบต่อไป):", err);
     });
-}, 500);
+}, 2000); // 👈 เปลี่ยนจาก 250 เป็น 2000
 
         // 🌟 ฟังก์ชันเล่นสไลด์โฆษณา
         function playNextAd() {
