@@ -5308,7 +5308,6 @@ class="hidden bg-white p-6 rounded-2xl border border-purple-100 shadow-sm flex-1
 window.currentBranch = localStorage.getItem('currentBranch') || "สาขาหลัก";
 window.currentStoreId = localStorage.getItem('currentStoreId') || "";
 
-
 // 1. ใส่ลิงก์หลังบ้านของคุณเฟรมไว้บนสุด
         const API_URL = "https://script.google.com/macros/s/AKfycbwHmG_j6fmCAo9AsqWWhwLZ7mGHOeUn7fUAbcZ8a8REopMo0jGoIo_ymhzcSP0eqA_UXg/exec";
 
@@ -5356,7 +5355,6 @@ const google = {
         }
     }
 };
-
 
 let cart = [];
     let currentCash = "0";
@@ -5740,6 +5738,8 @@ function updateStoreUI(settings) {
   safeSetCheck('toggleTransfer', !!settings.enableTransfer);
   safeSetValue('settingPromptPay', settings.promptPay || "");
   safeSetCheck('toggleHalf', !!settings.enableHalf);
+  safeSetValue('settingGovPercent', settings.govPercent || "60");
+safeSetValue('settingGovMax', settings.govMax || "200");
   safeSetCheck('toggleSplit', !!settings.enableSplit);
   safeSetCheck('toggleDeliveryPayment', !!settings.enableDeliveryPayment);
   safeSetCheck('toggleOnlinePayment', !!settings.enableOnlinePayment); // 👈 เพิ่มบรรทัดนี้
@@ -6027,6 +6027,8 @@ function savePaymentSettings() {
         enableTransfer: document.getElementById('toggleTransfer').checked,
         promptPay: document.getElementById('settingPromptPay').value,
         enableHalf: document.getElementById('toggleHalf').checked,
+        govPercent: document.getElementById('settingGovPercent').value,
+govMax: document.getElementById('settingGovMax').value,
         enableSplit: document.getElementById('toggleSplit').checked,
         enableDeliveryPayment: document.getElementById('toggleDeliveryPayment').checked,
         enableOnlinePayment: document.getElementById('toggleOnlinePayment').checked ,
