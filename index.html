@@ -3701,6 +3701,18 @@ class="hidden bg-white p-6 rounded-2xl border border-purple-100 shadow-sm flex-1
   <span id="modalGrandTotal" class="text-4xl font-bold text-pink-700">฿0.00</span>
 </div>
 
+<!-- 📍 เอาโค้ดกล่องคนละครึ่ง มาวางต่อท้ายตรงนี้ 📍 -->
+<div id="halfPaymentDetails" class="hidden bg-pink-50 p-4 rounded-xl border border-pink-200 mt-4 mb-4 transition-all">
+    <div class="flex justify-between items-center text-pink-700 font-medium text-sm mb-2">
+        <span>รัฐออกให้ (<span id="displayGovPercent">0</span>% / สูงสุด <span id="displayGovMax">0</span>)</span>
+        <span id="displayGovPays" class="font-bold">฿0.00</span>
+    </div>
+    <div class="flex justify-between items-center text-green-700 font-bold text-lg border-t border-pink-200 pt-2">
+        <span>👉 ลูกค้าจ่ายจริง (สแกนเป๋าตัง)</span>
+        <span id="displayCustomerPays">฿0.00</span>
+    </div>
+</div>
+
 <div id="taxServiceSummary" class="hidden mb-4 p-4 bg-white rounded-2xl border border-pink-100 text-sm">
   <div id="taxRow" class="flex justify-between mb-1">
     <span class="text-gray-500">ภาษี (VAT)</span>
@@ -6206,6 +6218,7 @@ function renderPaymentButtons() {
 }
 
 function setPaymentType(type) {
+    window.currentPaymentType = type;
     let s = globalStoreSettings;
     let isCashEnabled = s.enableCash !== false;
     if (type === 'เงินสด' && !isCashEnabled) return;
@@ -6278,6 +6291,7 @@ function setPaymentType(type) {
     calculateChange();
     if (typeof syncCustomerDisplay === 'function') syncCustomerDisplay();
     syncCustomerDisplay();
+    updateHalfPaymentDisplay();
 }
 
 
@@ -17867,6 +17881,47 @@ function checkAutoLogin() {
       console.error("Auto login error:", e);
     }
   }
+}
+
+function updateHalfPaymentDisplay() {
+    const detailsContainer = document.getElementById('halfPaymentDetails');
+    if (!detailsContainer) return;
+
+    // ถ้าไม่ได้เลือก "คนละครึ่ง" ให้ซ่อนกล่องแล้วหยุดทำงาน
+    // ⚠️ เปลี่ยนตัวแปร currentPaymentType ให้ตรงกับตัวแปรที่คุณใช้เก็บสถานะปุ่มในระบบของคุณ
+    if (currentPaymentType !== 'คนละครึ่ง') {
+        detailsContainer.classList.add('hidden');
+        return;
+    }
+
+    // 1. ดึงยอดสุทธิ (Grand Total) จากหน้าต่างชำระเงิน
+    // (ดึงจากตัวเลขที่โชว์บนหน้าจอ หรือใช้ตัวแปร global ที่คุณมี)
+    let netTotalElement = document.getElementById('modalGrandTotal'); 
+    let netTotal = netTotalElement ? parseFloat(netTotalElement.innerText.replace(/[^0-9.-]+/g,"")) : 0;
+
+    // 2. ดึงการตั้งค่าจากระบบ (ถ้าค่าไม่มี ให้ default เป็น 60% และเพดาน 200)
+    let govPercent = 60;
+    let govMax = 200;
+    if (typeof globalStoreSettings !== 'undefined') {
+        govPercent = parseFloat(globalStoreSettings.govPercent) || 60;
+        govMax = parseFloat(globalStoreSettings.govMax) || 200;
+    }
+
+    // 3. คำนวณยอด
+    let govPays = netTotal * (govPercent / 100);
+    if (govPays > govMax) {
+        govPays = govMax; // ถ้ายอดรัฐจ่ายเกินเพดาน ให้ตัดเหลือเท่าเพดาน
+    }
+    let customerPays = netTotal - govPays;
+
+    // 4. แสดงผลลงในหน้าจอ
+    document.getElementById('displayGovPercent').innerText = govPercent;
+    document.getElementById('displayGovMax').innerText = govMax;
+    document.getElementById('displayGovPays').innerText = '฿' + govPays.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('displayCustomerPays').innerText = '฿' + customerPays.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+    // โชว์กล่อง
+    detailsContainer.classList.remove('hidden');
 }
 
 // สั่งให้ทำงานทันทีที่โหลดหน้าเว็บเสร็จ
